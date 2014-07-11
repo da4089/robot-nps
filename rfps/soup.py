@@ -1,8 +1,27 @@
 ########################################################################
+# robot-fps, Financial Protocol Simulator for Robot Framework
+#
+# Copyright (C) 2014 David Arnold
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
 ########################################################################
 
 import struct
 
+
+########################################################################
 
 class ClientHeartbeat:
     _format = '!Hc'
@@ -111,111 +130,34 @@ class LoginRejected:
         return
 
 
-class SequencedData:
-    _format = '!Hc'
-    _type = 'S'
-
-    def __init__(self):
-        self.message = ''
-        self._OuchMessage = None
-        return
-
-    def encode(self):
-        self.message = self._OuchMessage.encode()
-        return struct.pack(self._format,
-                           len(self.message) + 1,
-                           self._type) + self.message
-
-    def decode(self, buf):
-        fields = struct.unpack(self._format, buf[:3])
-        l = fields[0]
-        assert fields[1] == self._type
-        self.Message = buf[3:l - 1 + 3]
-
-        factory = OUCH.SequencedMessages.get(self.Message[0])
-        if not factory:
-            raise BadOuchTypeError(self.Message[0])
-
-        self._OuchMessage = factory()
-        print self._OuchMessage
-        self._OuchMessage.decode(self.Message)
-        return
-
-
-class ServerHeartbeat:
-    _format = '!Hc'
-    _type = 'H'
-
-    def __init__(self):
-        return
-
-    def encode(self):
-        return struct.pack(self._format, 1, self._type)
-
-    def decode(self, buf):
-        fields = struct.unpack(self._format, buf)
-        assert fields[0] == 1
-        assert fields[1] == self._type
-        return
-
-
 class LoginRequest:
     _format = '!Hc6s10s10s20s'
     _type = 'L'
 
     def __init__(self):
-        self.Username = ''
-        self.Password = ''
-        self.RequestedSession = ''
-        self.RequestedSequenceNumber = 0
+        self.username = ''
+        self.password = ''
+        self.requested_session = ''
+        self.requested_sequence_number = 0
         return
 
     def encode(self):
         return struct.pack(self._format,
                            47,
                            self._type,
-                           self.Username.ljust(6),
-                           self.Password.ljust(10),
-                           self.RequestedSession.ljust(10),
-                           str(self.RequestedSequenceNumber).rjust(20))
+                           self.username.ljust(6),
+                           self.password.ljust(10),
+                           self.requested_session.ljust(10),
+                           str(self.requested_sequence_number).rjust(20))
 
     def decode(self, buf):
         fields = struct.unpack(self._format, buf)
         assert fields[0] == 47
         assert fields[1] == self._type
-        self.Username = fields[2]
-        self.Password = fields[3]
-        self.RequestedSession = fields[4]
-        self.RequestedSequenceNumber = fields[5]
-        return
-
-
-class UnsequencedData:
-    _format = '!Hc'
-    _type = 'U'
-
-    def __init__(self):
-        self.Message = ''
-        self._OuchMessage = None
-        return
-
-    def encode(self):
-        self.Message = self._OuchMessage.encode()
-        return struct.pack(self._format,
-                           len(self.Message) + 1,
-                           self._type) + self.Message
-
-    def decode(self, buf):
-        fields = struct.unpack(self._format, buf[0:3])
-        l = fields[0]
-        assert fields[1] == self._type
-        self.Message = buf[3:l - 1 + 3]
-
-        factory = OUCH.UnsequencedMessages.get(self.Message[0])
-        assert factory
-
-        self._OuchMessage = factory()
-        self._OuchMessage.decode(self.Message)
+        self.username = fields[2]
+        self.password = fields[3]
+        self.requested_session = fields[4]
+        self.requested_sequence_number = fields[5]
         return
 
 
@@ -236,6 +178,67 @@ class LogoutRequest:
         return
 
 
+class SequencedData:
+    _format = '!Hc'
+    _type = 'S'
+
+    def __init__(self):
+        self.message = ''
+        return
+
+    def encode(self):
+        return struct.pack(self._format,
+                           len(self.message) + 1,
+                           self._type) + self.message
+
+    def decode(self, buf):
+        fields = struct.unpack(self._format, buf[:3])
+        length = fields[0] - 1
+        assert fields[1] == self._type
+        self.message = buf[3:length + 3]
+        return
+
+
+class ServerHeartbeat:
+    _format = '!Hc'
+    _type = 'H'
+
+    def __init__(self):
+        return
+
+    def encode(self):
+        return struct.pack(self._format, 1, self._type)
+
+    def decode(self, buf):
+        fields = struct.unpack(self._format, buf)
+        assert fields[0] == 1
+        assert fields[1] == self._type
+        return
+
+
+class UnsequencedData:
+    _format = '!Hc'
+    _type = 'U'
+
+    def __init__(self):
+        self.message = ''
+        return
+
+    def encode(self):
+        return struct.pack(self._format,
+                           len(self.message) + 1,
+                           self._type) + self.message
+
+    def decode(self, buf):
+        fields = struct.unpack(self._format, buf[0:3])
+        length = fields[0] - 1
+        assert fields[1] == self._type
+        self.message = buf[3:length + 3]
+        return
+
+
+########################################################################
+
 Messages = {
     "+": Debug,
     "A": LoginAccepted,
@@ -250,3 +253,4 @@ Messages = {
 }
 
 
+########################################################################
