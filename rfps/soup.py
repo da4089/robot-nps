@@ -39,6 +39,7 @@ class ClientHeartbeat:
         assert fields[1] == self._type
         return
 
+
 class Debug:
     _format = '!Hc'
     _type = '+'
@@ -49,7 +50,7 @@ class Debug:
 
     def encode(self):
         return struct.pack(self._format,
-                           len(self.Text) + 1,
+                           len(self.text) + 1,
                            self._type) + self.text
 
     def decode(self, buf):
@@ -245,7 +246,7 @@ Messages = {
     "H": ServerHeartbeat,
     "J": LoginRejected,
     "L": LoginRequest,
-    "O": LogoutRequest
+    "O": LogoutRequest,
     "R": ClientHeartbeat,
     "S": SequencedData,
     "U": UnsequencedData,
