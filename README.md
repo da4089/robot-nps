@@ -1,6 +1,6 @@
 robot-fps
 =========
-Financial protocols simulator for Robot Framework.
+Financial protocols simulator for Robot Framework. [![Build Status](https://travis-ci.org/da4089/robot-fps.svg?branch=master)](https://travis-ci.org/da4089/robot-fps)
 
 Robot Framework is a system-testing framework, originally developed
 primary by Pekka Klarck at Nokia Siemens Networks.  It provides a
