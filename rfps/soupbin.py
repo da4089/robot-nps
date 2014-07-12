@@ -101,7 +101,7 @@ class LoginAccepted:
         fields = struct.unpack(self._format, buf)
         assert fields[0] == 31
         assert fields[1] == self._type
-        self.session = fields[2]
+        self.session = fields[2].strip()
         self.sequence_number = int(fields[3])
         return
 
