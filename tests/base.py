@@ -1,5 +1,5 @@
 import unittest
-from rfps import soup
+from rfps import soupbin
 
 
 class BaseTests(unittest.TestCase):
@@ -11,10 +11,10 @@ class BaseTests(unittest.TestCase):
         pass
 
     def test_soup_debug(self):
-        debug = soup.Debug()
+        debug = soupbin.Debug()
         debug.text = "SOUP debug text string"
         s = debug.encode()
-        clone = soup.Debug()
+        clone = soupbin.Debug()
         clone.decode(s)
         self.assertEqual(debug.text, clone.text)
 
