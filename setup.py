@@ -19,5 +19,14 @@
 #
 ########################################################################
 
+from distutils.core import setup
+
+
+setup(name="rfps",
+      version="1.0a1",
+      description="Robot Framework Financial Protocols Simulator",
+      packages=["rfps"],
+      scripts=["fps-ouch"])
+
 
 ########################################################################
