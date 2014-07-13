@@ -18,30 +18,41 @@
 #
 ########################################################################
 
+# Implements NASDAQ SoupTcp 3.0 - 2014/03/20.
+#
+# SoupTCP is a simple framing protocol used by NASDAQ's OUCH 3.x series
+# order entry protocols.  It is an ASCII-based protocol, with numeric
+# quantities represented as strings of ASCII digits; and using a
+# trailing LF character to indicate the end of a message body.
+#
+# Compare with SoupBin (with explicit lengths and binary numbers) and
+# UFO (a UDP-based encapsulation).
+
+########################################################################
+
 import struct
 
 
 ########################################################################
 
+LF = '\n'
+
 class ClientHeartbeat:
-    _format = '!Hc'
     _type = 'R'
 
     def __init__(self):
         return
 
     def encode(self):
-        return struct.pack(self._format, 1, self._type)
+        return self._type + LF
 
     def decode(self, buf):
-        fields = struct.unpack(self._format, buf)
-        assert fields[0] == 1
-        assert fields[1] == self._type
+        assert buf[0] == self._type
+        assert buf[1] == LF
         return
 
 
 class Debug:
-    _format = '!Hc'
     _type = '+'
 
     def __init__(self):
@@ -49,40 +60,39 @@ class Debug:
         return
 
     def encode(self):
-        return struct.pack(self._format,
-                           len(self.text) + 1,
-                           self._type) + self.text
+        return self._type + self.text + LF
 
     def decode(self, buf):
-        fields = struct.unpack(self._format, buf[:3])
-        soup_len = fields[0]
-        assert fields[1] == self._type
+        assert buf[0] == self._type
+        i = 1
+        while i < len(buf):
+            if buf[i] != LF:
+                i += 1
+                continue
+            self.text = buf[1:i]
+            break
 
-        # Bytes 0 & 1 are len, 2 is type, 3+ are payload.
-        # Length: +1 for type, +1 for Python slicing.
-        self.text = buf[3:soup_len + 2] 
+        assert buf[i] == LF
         return
 
 
 class EndOfSession:
-    _format = '!Hc'
     _type = 'Z'
 
     def __init__(self):
         return
 
     def encode(self):
-        return struct.pack(self._format, 1, self._type)
+        return self._type + LF
 
     def decode(self, buf):
-        fields = struct.unpack(self._format, buf)
-        assert fields[0] == 1
-        assert fields[1] == self._type
+        assert buf[0] == self._type
+        assert buf[1] == LF
         return
 
 
 class LoginAccepted:
-    _format = '!Hc10s20s'
+    _format = 'c10s20sc'
     _type = 'A'
 
     def __init__(self):
@@ -91,23 +101,19 @@ class LoginAccepted:
         return
 
     def encode(self):
-        return struct.pack(self._format,
-                           31,
-                           self._type,
-                           self.session.ljust(10),
-                           str(self.sequence_number).ljust(20))
+        return self._type + self.session.rjust(10, ' ') + str(self.sequence_number).rjust(20) + LF
 
     def decode(self, buf):
         fields = struct.unpack(self._format, buf)
-        assert fields[0] == 31
-        assert fields[1] == self._type
-        self.session = fields[2].strip()
-        self.sequence_number = int(fields[3])
+        assert fields[0] == self._type
+        self.session = fields[1].strip()
+        self.sequence_number = int(fields[2])
+        assert fields[3] == LF
         return
 
 
 class LoginRejected:
-    _format = '!Hcc'
+    _format = 'ccc'
     _type = 'J'
 
     NOT_AUTHORIZED = 'A'
@@ -119,68 +125,67 @@ class LoginRejected:
 
     def encode(self):
         return struct.pack(self._format,
-                           2,
                            self._type,
-                           self.reject_reason_code)
+                           self.reject_reason_code,
+                           LF)
 
     def decode(self, buf):
         fields = struct.unpack(self._format, buf)
-        assert fields[0] == 2
-        assert fields[1] == self._type
-        self.reject_reason_code = fields[2]
+        assert fields[0] == self._type
+        self.reject_reason_code = fields[1]
+        assert fields[2] == LF
         return
 
 
 class LoginRequest:
-    _format = '!Hc6s10s10s20s'
+    _format = 'c6s10s10s20sc'
     _type = 'L'
 
     def __init__(self):
         self.username = ''
         self.password = ''
         self.requested_session = ''
-        self.requested_sequence_number = 0
+        self.requested_sequence_number = ''
         return
 
     def encode(self):
         return struct.pack(self._format,
-                           47,
                            self._type,
                            self.username.ljust(6),
                            self.password.ljust(10),
                            self.requested_session.ljust(10),
-                           str(self.requested_sequence_number).rjust(20))
+                           str(self.requested_sequence_number).rjust(20),
+                           LF)
 
     def decode(self, buf):
         fields = struct.unpack(self._format, buf)
-        assert fields[0] == 47
-        assert fields[1] == self._type
-        self.username = fields[2].strip()
-        self.password = fields[3].strip()
-        self.requested_session = fields[4].strip()
-        self.requested_sequence_number = int(fields[5])
+        assert fields[0] == self._type
+        self.username = fields[1].strip()
+        self.password = fields[2].strip()
+        self.requested_session = fields[3].strip()
+        self.requested_sequence_number = int(fields[4])
+        assert fields[5] == LF
         return
 
 
 class LogoutRequest:
-    _format = '!Hc'
+    _format = 'cc'
     _type = 'O'
 
     def __init__(self):
         return
 
     def encode(self):
-        return struct.pack(self._format, 1, self._type)
+        return struct.pack(self._format, self._type, LF)
 
     def decode(self, buf):
         fields = struct.unpack(self._format, buf)
-        assert fields[0] == 1
-        assert fields[1] == self._type
+        assert fields[0] == self._type
+        assert fields[1] == LF
         return
 
 
 class SequencedData:
-    _format = '!Hc'
     _type = 'S'
 
     def __init__(self):
@@ -188,37 +193,42 @@ class SequencedData:
         return
 
     def encode(self):
-        return struct.pack(self._format,
-                           len(self.message) + 1,
-                           self._type) + self.message
+        return self._type + self.message + LF
 
     def decode(self, buf):
-        fields = struct.unpack(self._format, buf[:3])
-        length = fields[0] - 1
-        assert fields[1] == self._type
-        self.message = buf[3:length + 3]
+        assert buf[0] == self._type
+        i = 1
+        while i < len(buf):
+            if buf[i] != LF:
+                i += 1
+                continue
+            self.message = buf[1:i]
+            break
+
+        assert buf[i] == LF
         return
 
 
 class ServerHeartbeat:
-    _format = '!Hc'
+    _format = 'cc'
     _type = 'H'
 
     def __init__(self):
         return
 
     def encode(self):
-        return struct.pack(self._format, 1, self._type)
+        return struct.pack(self._format,
+                           self._type,
+                           LF)
 
     def decode(self, buf):
         fields = struct.unpack(self._format, buf)
-        assert fields[0] == 1
-        assert fields[1] == self._type
+        assert fields[0] == self._type
+        assert fields[1] == LF
         return
 
 
 class UnsequencedData:
-    _format = '!Hc'
     _type = 'U'
 
     def __init__(self):
@@ -226,32 +236,20 @@ class UnsequencedData:
         return
 
     def encode(self):
-        return struct.pack(self._format,
-                           len(self.message) + 1,
-                           self._type) + self.message
+        return self._type + self.message + LF
 
     def decode(self, buf):
-        fields = struct.unpack(self._format, buf[0:3])
-        length = fields[0] - 1
-        assert fields[1] == self._type
-        self.message = buf[3:length + 3]
+        assert buf[0] == self._type
+        i = 1
+        while i < len(buf):
+            if buf[i] != LF:
+                i += 1
+                continue
+            self.message = buf[1:i]
+            break
+
+        assert buf[i] == LF
         return
-
-
-########################################################################
-
-Messages = {
-    "+": Debug,
-    "A": LoginAccepted,
-    "H": ServerHeartbeat,
-    "J": LoginRejected,
-    "L": LoginRequest,
-    "O": LogoutRequest,
-    "R": ClientHeartbeat,
-    "S": SequencedData,
-    "U": UnsequencedData,
-    "Z": EndOfSession,
-}
 
 
 ########################################################################

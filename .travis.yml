@@ -6,4 +6,4 @@ install:
  - pip install -r requirements.txt
 script:
  - cd tests
- - env PYTHONOPATH=.. python -m unittest --verbose base
+ - env PYTHONOPATH=.. python -m unittest --verbose test_all
