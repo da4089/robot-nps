@@ -253,3 +253,19 @@ class UnsequencedData:
 
 
 ########################################################################
+
+Messages = {
+    '+': Debug,
+    'A': LoginAccepted,
+    'H': ServerHeartbeat,
+    'J': LoginRejected,
+    'L': LoginRequest,
+    'O': LogoutRequest,
+    'R': ClientHeartbeat,
+    'S': SequencedData,
+    'U': UnsequencedData,
+    'Z': EndOfSession,
+}
+
+
+########################################################################

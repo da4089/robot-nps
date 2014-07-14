@@ -18,6 +18,18 @@
 #
 ########################################################################
 
+# Implements NASDAQ SoupBinTCP 3.0 2008/10/15.
+#
+# SoupBinTCP is a simple framing protocol used by NASDAQ's OUCH 4.x series
+# of order entry protocols.  It uses a 16 bit, big-endian binary length
+# field in the header to frame its encapsulated message.  Consequently, and
+# unlike SoupTCP, it can carry any application payload, and does not require
+# scanning for the message terminator to determine the message length.
+#
+# Compare with SoupTCP and UFO from NASDAQ, and MEP from DirectEdge.
+
+########################################################################
+
 import struct
 
 
