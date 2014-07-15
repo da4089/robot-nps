@@ -39,7 +39,6 @@ class SoupBinTests(unittest.TestCase):
         self.assertEqual(pkt._type, clone._type)
         return
 
-
     def test_soupbin_debug(self):
         pkt = soupbin.Debug()
         pkt.text = "SOUP debug text string"
@@ -50,7 +49,6 @@ class SoupBinTests(unittest.TestCase):
         self.assertEqual(pkt.text, clone.text)
         return
 
-
     def test_soupbin_end_of_session(self):
         pkt = soupbin.EndOfSession()
         s = pkt.encode()
@@ -58,7 +56,6 @@ class SoupBinTests(unittest.TestCase):
         clone.decode(s)
         self.assertEqual(pkt._type, clone._type)
         return
-
 
     def test_soupbin_login_accepted(self):
         pkt = soupbin.LoginAccepted()
@@ -74,3 +71,66 @@ class SoupBinTests(unittest.TestCase):
         return
 
 
+    def test_soupbin_login_rejected(self):
+        pkt = soupbin.LoginRejected()
+        pkt.reject_reason_code = soupbin.LoginRejected.NOT_AUTHORIZED
+        s = pkt.encode()
+
+        clone = soupbin.LoginRejected()
+        clone.decode(s)
+        self.assertEqual(pkt.reject_reason_code, clone.reject_reason_code)
+        return
+
+    def test_soupbin_login_request(self):
+        pkt = soupbin.LoginRequest()
+        pkt.username = "USER"
+        pkt.password = "PASSWORD"
+        pkt.requested_session = "SESSIONA"
+        pkt.requested_sequence_number = 42
+        s = pkt.encode()
+
+        clone = soupbin.LoginRequest()
+        clone.decode(s)
+        self.assertEqual(pkt.username, clone.username)
+        self.assertEqual(pkt.password, clone.password)
+        self.assertEqual(pkt.requested_session, clone.requested_session)
+        self.assertEqual(pkt.requested_sequence_number, clone.requested_sequence_number)
+        return
+
+    def test_soupbin_logout_request(self):
+        pkt = soupbin.LogoutRequest()
+        s = pkt.encode()
+
+        clone = soupbin.LogoutRequest()
+        clone.decode(s)
+        self.assertEqual(pkt._type, clone._type)
+        return
+
+    def test_soupbin_sequenced_data(self):
+        pkt = soupbin.SequencedData()
+        pkt.message = "encapsulated message bytes"
+        s = pkt.encode()
+
+        clone = soupbin.SequencedData()
+        clone.decode(s)
+        self.assertEqual(pkt.message, clone.message)
+        return
+
+    def test_soupbin_server_heartbeat(self):
+        pkt = soupbin.ServerHeartbeat()
+        s = pkt.encode()
+
+        clone = soupbin.ServerHeartbeat()
+        clone.decode(s)
+        self.assertEqual(pkt._type, clone._type)
+        return
+
+    def test_soupbin_unsequenced_data(self):
+        pkt = soupbin.UnsequencedData()
+        pkt.message = "encapsulated message bytes"
+        s = pkt.encode()
+
+        clone = soupbin.UnsequencedData()
+        clone.decode(s)
+        self.assertEqual(pkt.message, clone.message)
+        return
