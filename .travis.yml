@@ -7,7 +7,8 @@ install:
 script:
  - cd unit_tests
  - env PYTHONOPATH=.. python -m unittest --verbose test_all
- - cd ../robot_tests
- - env PYTHONPATH=.. python ./fps-ouch &
+ - cd ..
+ - env PYTHONPATH=. python ./fps-ouch &
+ - cd robot_tests
  - pybot *.robot
-
+ - cd ..
