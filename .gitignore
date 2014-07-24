@@ -52,3 +52,9 @@ coverage.xml
 # Sphinx documentation
 docs/_build/
 
+# Robot Framework test results
+robot_tests/*.html
+robot_tests/*.xml
+
+# PyCharm
+.idea/
