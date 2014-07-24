@@ -21,10 +21,46 @@
 
 import argparse
 import rfps
-from robotremoteserver import RobotRemoteServer
+
+from twistedremoteserver import TwistedRemoteServer
+from twisted.internet import reactor
+from twisted.web.resource import Resource
+from twisted.web.server import Site
 
 
 ########################################################################
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="A Robot Framework remote "
+                                                 "server that provides both "
+                                                 "client and server-side "
+                                                 "simulation of the OUCH4 "
+                                                 "protocol.")
+    parser.add_argument("-p", "--port",
+                        nargs=1,
+                        type=int,
+                        help="TCP port number for remote Robot Framework "
+                             "access.",
+                        default=7340)
+    parser.add_argument("-i", "--interface",
+                        nargs=1,
+                        type=str,
+                        help="IP address of listening interface.  Default is "
+                             "%(default)s.",
+                        default="0.0.0.0")
+    args = parser.parse_args()
+    print args.interface
+    print args.port
+
+    ouch_robot = rfps.OuchRobot()
+    robot_api = TwistedRemoteServer(ouch_robot, args.interface, args.port[0])
+
+    root = Resource()
+    root.putChild("RPC2", robot_api)
+    factory = Site(root)
+    reactor.listenTCP(args.port[0], factory, interface=args.interface)
+    reactor.run()
+
 
 
 ########################################################################
