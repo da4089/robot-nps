@@ -49,16 +49,22 @@ if __name__ == "__main__":
                              "%(default)s.",
                         default="0.0.0.0")
     args = parser.parse_args()
-    print args.interface
-    print args.port
+    interface = args.interface
+    if type(args.port) == type([]):
+        port = args.port[0]
+    else:
+        port = args.port
+
+    print interface
+    print port
 
     ouch_robot = rfps.OuchRobot()
-    robot_api = TwistedRemoteServer(ouch_robot, args.interface, args.port[0])
+    robot_api = TwistedRemoteServer(ouch_robot, interface, port)
 
     root = Resource()
     root.putChild("RPC2", robot_api)
     factory = Site(root)
-    reactor.listenTCP(args.port[0], factory, interface=args.interface)
+    reactor.listenTCP(port, factory, interface=interface)
     reactor.run()
 
 

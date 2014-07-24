@@ -8,7 +8,7 @@ script:
  - cd unit_tests
  - env PYTHONOPATH=.. python -m unittest --verbose test_all
  - cd ..
- - env PYTHONPATH=. python ./fps-ouch &
+ - env PYTHONPATH=. python ./fps-ouch -p 8274 &
  - cd robot_tests
  - pybot *.robot
  - cd ..
