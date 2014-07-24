@@ -2,4 +2,4 @@
 #
 Twisted
 robotframework
-robotremoteserver
+-e git+git://github.com/da4089/PythonRemoteServer#egg=robotremoteserver
