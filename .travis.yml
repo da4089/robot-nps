@@ -5,5 +5,9 @@ install:
  - pip install .
  - pip install -r requirements.txt
 script:
- - cd tests
+ - cd unit_tests
  - env PYTHONOPATH=.. python -m unittest --verbose test_all
+ - cd ../robot_tests
+ - env PYTHONPATH=.. python ./fps-ouch &
+ - pybot *.robot
+
