@@ -8,8 +8,7 @@ script:
  - cd unit_tests
  - env PYTHONOPATH=.. python -m unittest --verbose test_all
  - cd ..
- - kill `ps axwww | grep fps-ouch | grep -v grep | awk '{ print $1; }'` || true
- - env PYTHONPATH=. python ./fps-ouch -p 8274 &
+ - env PYTHONPATH=. python ./fps-ouch -f port &
  - cd robot_tests
- - pybot *.robot
+ - pybot -v OUCH_PORT:`cat ../port` *.robot
  - cd ..

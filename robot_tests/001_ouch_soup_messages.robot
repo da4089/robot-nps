@@ -1,5 +1,5 @@
 *** Settings ***
-Library           Remote    http://localhost:8274    WITH NAME    OUCH
+Library           Remote    http://localhost:${OUCH_PORT}    WITH NAME    OUCH
 
 *** Test Cases ***
 Create Soup Message
