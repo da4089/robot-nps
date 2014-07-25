@@ -9,6 +9,8 @@ script:
  - env PYTHONOPATH=.. python -m unittest --verbose test_all
  - cd ..
  - env PYTHONPATH=. python ./fps-ouch -f port &
+ - while test ! -f port; do sleep 1; done
  - cd robot_tests
  - pybot -v OUCH_PORT:`cat ../port` *.robot
  - cd ..
+ - rm -f port
