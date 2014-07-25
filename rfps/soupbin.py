@@ -35,7 +35,14 @@ import struct
 
 ########################################################################
 
-class ClientHeartbeat:
+class SoupMessage(object):
+    _type = None
+
+    def get_type(self):
+        return self._type
+
+
+class ClientHeartbeat(SoupMessage):
     _format = '!Hc'
     _type = 'R'
 
@@ -52,7 +59,7 @@ class ClientHeartbeat:
         return
 
 
-class Debug:
+class Debug(SoupMessage):
     _format = '!Hc'
     _type = '+'
 
@@ -76,7 +83,7 @@ class Debug:
         return
 
 
-class EndOfSession:
+class EndOfSession(SoupMessage):
     _format = '!Hc'
     _type = 'Z'
 
@@ -93,7 +100,7 @@ class EndOfSession:
         return
 
 
-class LoginAccepted:
+class LoginAccepted(SoupMessage):
     _format = '!Hc10s20s'
     _type = 'A'
 
@@ -118,7 +125,7 @@ class LoginAccepted:
         return
 
 
-class LoginRejected:
+class LoginRejected(SoupMessage):
     _format = '!Hcc'
     _type = 'J'
 
@@ -143,7 +150,7 @@ class LoginRejected:
         return
 
 
-class LoginRequest:
+class LoginRequest(SoupMessage):
     _format = '!Hc6s10s10s20s'
     _type = 'L'
 
@@ -174,7 +181,7 @@ class LoginRequest:
         return
 
 
-class LogoutRequest:
+class LogoutRequest(SoupMessage):
     _format = '!Hc'
     _type = 'O'
 
@@ -191,7 +198,7 @@ class LogoutRequest:
         return
 
 
-class SequencedData:
+class SequencedData(SoupMessage):
     _format = '!Hc'
     _type = 'S'
 
@@ -212,7 +219,7 @@ class SequencedData:
         return
 
 
-class ServerHeartbeat:
+class ServerHeartbeat(SoupMessage):
     _format = '!Hc'
     _type = 'H'
 
@@ -229,7 +236,7 @@ class ServerHeartbeat:
         return
 
 
-class UnsequencedData:
+class UnsequencedData(SoupMessage):
     _format = '!Hc'
     _type = 'U'
 
