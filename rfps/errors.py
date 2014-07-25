@@ -26,6 +26,11 @@ class BadBooleanError(exceptions.ValueError):
     pass
 
 
+class BadFieldNameError(exceptions.NameError):
+    """No field of this name in the specified message."""
+    pass
+
+
 class BadMessageTypeError(exceptions.ValueError):
     """The supplied message type is not recognised."""
     pass

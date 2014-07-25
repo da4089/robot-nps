@@ -20,7 +20,10 @@
 
 from base import *
 import soupbin
+import ouch4
 
+
+########################################################################
 
 class OuchServerSession(BaseServerSession):
     def __init__(self, factory, address):
@@ -49,7 +52,6 @@ class OuchClient(BaseClient):
     def dataReceived(self, data):
         #FIXME
         pass
-
 
 
 class OuchClientFactory(BaseClientFactory):
@@ -83,3 +85,107 @@ class OuchRobot(BaseRobot):
         del self.messages[name]
         return
 
+    def get_soup_type(self, message_name):
+        """Get the SOUP type of the specified message."""
+
+        msg = self.messages.get(message_name)
+        if not msg:
+            raise errors.NoSuchMessageError(message_name)
+
+        return msg._type
+
+    def set_soup_field(self, name, field, value):
+        """Set a field in the specified SOUP message."""
+
+        msg = self.messages.get(name)
+        if not msg:
+            raise errors.NoSuchMessageError(name)
+
+        if not hasattr(msg, field) or field[0:1] == "_":
+            raise errors.BadFieldNameError(field)
+
+        setattr(msg, field, value)
+        return
+
+    def get_soup_field(self, message_name, field_name):
+        """Get the value of a field in a SOUP message."""
+
+        msg = self.messages.get(message_name)
+        if not msg:
+            raise errors.NoSuchMessageError(message_name)
+
+        if field_name[0:1] == "_" or not hasattr(msg, field_name):
+            raise errors.BadFieldNameError(field_name)
+
+        return getattr(msg, field_name)
+
+    def set_ouch_type(self, message_name, ouch_type):
+        """Set the OUCH message type for this message."""
+
+        msg = self.messages.get(message_name)
+        if not msg:
+            raise errors.NoSuchMessageError(message_name)
+
+        constructor = None
+        if msg.get_type() == 'U':
+            constructor = ouch4.UNSEQUENCED_MESSAGES.get(ouch_type)
+        elif msg.get_type() == 'S':
+            constructor = ouch4.SEQUENCED_MESSAGES.get(ouch_type)
+        else:
+            raise errors.BadMessageTypeError("SOUP message must be U or S, "
+                                             "not %c" % msg.get_type())
+        if not constructor:
+            raise errors.BadMessageTypeError(ouch_type)
+
+        msg._payload = constructor()
+        return
+
+    def get_ouch_type(self, message_name):
+        """Get the OUCH message type for this message."""
+
+        msg = self.messages.get(message_name)
+        if not msg:
+            raise errors.NoSuchMessageError(message_name)
+
+        if not hasattr(msg, "_payload"):
+            raise errors.NotAnOuchMessageError(message_name)
+
+        #FIXME: accessors
+        return msg._payload._ouch_type
+
+    def get_ouch_field(self, message_name, field_name):
+        """Get an OUCH message field from this message."""
+
+        msg = self.messages.get(message_name)
+        if not msg:
+            raise errors.NoSuchMessageError(message_name)
+
+        if not hasattr(msg, "_payload"):
+            raise errors.NotAnOuchMessageError(message_name)
+
+        if field_name[0:1] == "_" or not hasattr(msg._payload, field_name):
+            raise errors.BadFieldNameError(field_name)
+
+        return getattr(msg._payload, field_name)
+
+    def set_ouch_field(self, message_name, field_name, value):
+        """Set an OUCH message field value in this message."""
+
+        msg = self.messages.get(message_name)
+        if not msg:
+            raise errors.NoSuchMessageError(message_name)
+
+        if not hasattr(msg, "_payload"):
+            raise errors.NotAnOuchMessageError(message_name)
+
+        if field_name[0:1] == "_" or not hasattr(msg._payload, field_name):
+            raise errors.BadFieldNameError(field_name)
+
+        if field_name in ouch4.INTEGER_FIELDS:
+            value = int(value)
+
+        setattr(msg._payload, field_name, value)
+        return
+
+
+########################################################################
