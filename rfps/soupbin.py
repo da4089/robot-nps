@@ -35,6 +35,44 @@ import struct
 
 ########################################################################
 
+def has_complete_message(buf):
+    if len(buf) < 3:
+        # SoupBin header is 3 bytes.
+        return False
+
+    length, soup_type = struct.unpack("!Hc", buf[:3])
+    if len(buf) < length + 2:
+        # SoupBin header length field is count of following bytes (so + 2).
+        return False
+
+    if buf[2] not in Messages.keys():
+        # Unrecognised SoupBin message type code.
+        return False
+
+    return True
+
+
+def get_message(buf):
+    if len(buf) < 3:
+        return None, buf
+
+    soup_length, soup_type = struct.unpack("!Hc", buf[:3])
+    if len(buf) < soup_length + 2:
+        return None, buf
+
+    constructor = Messages.get(buf[2])
+    if not constructor:
+        return None, buf
+
+    soup_buf = buf[:soup_length + 2]
+    buf = buf[soup_length + 2:]
+
+    msg = constructor()
+    msg.decode(soup_buf)
+
+    return msg, buf
+
+
 class SoupMessage(object):
     _type = None
 

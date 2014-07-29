@@ -22,6 +22,9 @@ from base import *
 import soupbin
 import ouch4
 
+# Module-local logger.
+logger = logging.getLogger(__name__)
+
 
 ########################################################################
 
@@ -32,8 +35,28 @@ class OuchServerSession(BaseServerSession):
         return
 
     def dataReceived(self, data):
-        #FIXME
-        pass
+        """Handle a received packet.
+
+        Override of Twisted method from base class."""
+
+        self.receive_buffer += data
+
+        while len(self.receive_buffer) > 0:
+            if not soupbin.has_complete_message(self.receive_buffer):
+                return
+
+            msg, self.receive_buffer = soupbin.get_message(self.receive_buffer)
+
+            if msg.get_type() == 'R' and self.factory.auto_receive_heartbeats:
+                logger.info("OUCH: Server session [%s]: consumed heartbeat",
+                            self.factory.name)
+                return
+
+            self.received_messages.append(msg)
+            logger.info("%s: server queuing %s",
+                        self.factory.name, msg.get_type())
+
+        return
 
 
 class OuchServerFactory(BaseServerFactory):
@@ -50,8 +73,30 @@ class OuchClient(BaseClient):
         return
 
     def dataReceived(self, data):
-        #FIXME
-        pass
+        """Handle a received packet.
+
+        Override of Twisted method from base class."""
+
+        self.receive_buffer += data
+
+        while len(self.receive_buffer) > 0:
+            if not soupbin.has_complete_message(self.receive_buffer):
+                return
+
+            msg, self.receive_buffer = soupbin.get_message(self.receive_buffer)
+            if not msg:
+                return
+
+            if msg.get_type() == 'H' and self.factory.auto_receive_heartbeats:
+                logger.info("OUCH: Session [%s]: consumed heartbeat",
+                            self.factory.name)
+                return
+
+            self.received_messages.append(msg)
+            logger.info("%s: client queuing %s",
+                        self.factory.name, msg.get_type())
+
+        return
 
 
 class OuchClientFactory(BaseClientFactory):
@@ -65,6 +110,30 @@ class OuchRobot(BaseRobot):
     def __init__(self):
         self.protocol_name = "OUCH"
         BaseRobot.__init__(self)
+        return
+
+    def create_client(self, client_name, host, port, version):
+        """Create an OUCH client session."""
+
+        if client_name in self.clients:
+            raise errors.DuplicateClientError(client_name)
+
+        client = OuchClientFactory(self, client_name, host, port, version)
+        self.clients[client_name] = client
+        logger.info("Created OUCH client: %s @ %s:%s v%s",
+                    client_name, host, port, version)
+        return
+
+    def create_server(self, server_name, port, version):
+        """Create an OUCH server."""
+
+        if server_name in self.servers:
+            raise errors.DuplicateServerError(server_name)
+
+        server = OuchServerFactory(self, server_name, port, version)
+        self.servers[server_name] = server
+        logger.info("Created OUCH server: %s @ port %s v%s",
+                    server_name, port, version)
         return
 
     def create_soup_message(self, name, soup_type):
@@ -92,7 +161,7 @@ class OuchRobot(BaseRobot):
         if not msg:
             raise errors.NoSuchMessageError(message_name)
 
-        return msg._type
+        return msg.get_type()
 
     def set_soup_field(self, name, field, value):
         """Set a field in the specified SOUP message."""

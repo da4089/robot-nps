@@ -19,16 +19,10 @@
 ########################################################################
 
 import logging
-import os
-import socket
-import struct
-import time
 
 from twisted.internet import reactor
-from twisted.internet.error import ConnectionDone
-from twisted.internet.protocol import Protocol, ClientFactory, ServerFactory
-from twisted.web.resource import Resource
-from twisted.web.server import Site
+from twisted.internet.protocol import connectionDone, Protocol, ClientFactory,\
+    ServerFactory
 
 import errors
 
@@ -38,6 +32,10 @@ logger = logging.getLogger(__name__)
 
 
 def string_to_boolean(s):
+    """Convert a string to a boolean.
+
+    Used to process arguments from Robot Framework test scripts."""
+
     s = s.strip().lower()
     if s in ('t', 'y', '1', 'on', 'yes', 'true'):
         return True
@@ -65,30 +63,30 @@ class BaseServerSession(Protocol):
         return
 
     def connectionMade(self):
+        """Override Twisted event callback."""
         logger.debug("%s: BaseServerSession::connectionMade()",
                      self.protocol_name)
         return Protocol.connectionMade(self)
 
-    def connectionLost(self, reason):
+    def connectionLost(self, reason=connectionDone):
+        """Override Twisted event callback."""
         logger.debug("%s: BaseServerSession::connectionLost(): %s",
                      self.protocol_name, reason)
         return Protocol.connectionLost(self, reason)
 
     def dataReceived(self, data):
-        logger.debug("%s: BaseServerSession::dataReceived(): %u bytes",
-                     self.protocol_name, len(data))
-        self.receive_buffer += data
+        """Override Twisted event callback."""
 
-        while len(self.receive_buffer) > 0:
-            #FIXME: call framing protocol module to try to get message.
-            break
+        #FIXME: could be implemented by passing a class in set_protocol()
+        #FIXME: and using a standard set of functions for unpacking buffers
+        #FIXME: and creating message instances.  Or a factory class.
 
-        return
+        raise NotImplementedError("BaseServerSession::dataReceived()")
 
-    def sendBuffer(self, buffer):
-        logger.debug("%s: BaseServerSession::sendBuffer(): %u bytes",
+    def send_buffer(self, buf):
+        logger.debug("%s: BaseServerSession::send_buffer(): %u bytes",
                      self.protocol_name, len(buffer))
-        self.sent + buffer
+        self.sent += buf
 
         if self.factory.auto_flush:
             self.flush()
@@ -107,7 +105,7 @@ class BaseServerSession(Protocol):
         self.transport.loseConnection()
         return
 
-    def receive_queue_size(self):
+    def receive_queue_length(self):
         return len(self.received_messages)
 
     def get_received_message(self):
@@ -117,6 +115,11 @@ class BaseServerSession(Protocol):
 
 
 class BaseServerFactory(ServerFactory):
+    """A BaseServerFactory is essentially a listening socket.
+
+    Inbound connections will create BaseServerSession instances, which can be
+    then be managed via this factory."""
+
     def __init__(self, robot, name, port, version):
         self.robot = robot
         self.name = name
@@ -159,45 +162,57 @@ class BaseServerFactory(ServerFactory):
                            self.protocol_name)
             return
 
-        self.endpoint.stop_listening()
+        self.endpoint.stopListening()
         self.endpoint = None
         return
 
-    def accept_session(self, name):
+    def accept_session(self, session_name):
+        """Bind a queued client connection to the specified session name."""
+
         if len(self.new_sessions) < 1:
             raise errors.NoNewServerSessionsError()
 
-        if name in self.sessions:
-            raise errors.DuplicateServerSessionError(name)
+        if session_name in self.sessions:
+            raise errors.DuplicateServerSessionError(session_name)
 
         session = self.new_sessions.pop(0)
-        self.sessions[name] = session
+        self.sessions[session_name] = session
         return
 
-    def disconnect_session(self, name):
-        session = self.sessions.get(name)
+    def disconnect_session(self, session_name):
+        """Initiate disconnection of the specified server session."""
+
+        session = self.sessions.get(session_name)
         if not session:
-            raise errors.NoSuchServerSessionError(name)
+            raise errors.NoSuchServerSessionError(session_name)
 
         session.disconnect()
         return
 
-    def flush_session(self, name):
-        session = self.sessions.get(name)
+    def flush_session(self, session_name):
+        """Send all queued outbound messages for the specified session."""
+
+        session = self.sessions.get(session_name)
         if not session:
-            raise errors.NoSuchServerSessionError(name)
+            raise errors.NoSuchServerSessionError(session_name)
 
         session.flush()
         return
 
-    def get_session_queue_length(self, name):
-        session = self.sessions.get(name)
-        if not session:
-            raise errors.NoSuchServerSessionError(name)
+    def get_session_queue_length(self, session_name):
+        """Return the number of received messages queued for the specified
+        session."""
 
-        return len(session.received_messages)
+        session = self.sessions.get(session_name)
+        if not session:
+            raise errors.NoSuchServerSessionError(session_name)
+
+        return session.receive_queue_length()
 
     def get_received_message(self, session_name):
+        """Return the oldest received message queued for the specified
+        session."""
+
         session = self.sessions.get(session_name)
         if not session:
             raise errors.NoSuchServerSessionError(session_name)
@@ -205,6 +220,12 @@ class BaseServerFactory(ServerFactory):
         return session.get_received_message()
 
     def send_message(self, session_name, message):
+        """Send a message from the specified server session.
+
+        Note that the message is queued, not sent immediately, unless the
+        session is configured to automatically flush sent messages.  The queue
+        can be manually flushed using 'flush_session()'."""
+
         session = self.sessions.get(session_name)
         if not session:
             raise errors.NoSuchServerSessionError(session_name)
@@ -212,6 +233,8 @@ class BaseServerFactory(ServerFactory):
         return session.send_buffer(message.encode())
 
     def destroy(self):
+        """Destroy this server, and any sessions it has active."""
+
         if self.endpoint:
             self.stop_listening()
 
@@ -227,39 +250,37 @@ class BaseServerFactory(ServerFactory):
 
 
 class BaseClient(Protocol):
+    """A BaseClient instance represents, essentially, a client-side socket."""
+
     def __init__(self, factory, address):
         self.factory = factory
         self.sent = ''
         self.receive_buffer = ''
         self.received_messages = []
         self.protocol_name = ''
-        self.protocol = None
         return
 
-    def set_protocol(self, name, protocol):
+    def set_protocol(self, name):
         self.protocol_name = name
-        self.protocol = protocol
         return
 
-    def data_received(self, data):
-        logger.debug("%s: BaseClient::dataReceived(): %u bytes",
-                     self.protocol_name, len(data))
-        self.receive_buffer += data
+    def dataReceived(self, data):
+        """Override Twisted event callback."""
 
-        while len(self.receive_buffer) > 0:
-            # FIXME: plugin application framing protocol here!
-            pass
+        #FIXME: could be implemented by passing a class in set_protocol()
+        #FIXME: and using a standard set of functions for unpacking buffers
+        #FIXME: and creating message instances.  Or a factory class.
 
-        return
+        raise NotImplementedError("BaseClient::dataReceived()")
 
     def connectionMade(self):
         logger.debug("%s: BaseClient::connectionMade()", self.protocol_name)
         return Protocol.connectionMade(self)
 
-    def connectionLost(self, reason=ConnectionDone):
+    def connectionLost(self, reason=connectionDone):
         logger.debug("%s: BaseClient::connectionLost(): %s",
                      self.protocol_name, str(reason))
-        return Protocol.connectionLost(reason)
+        return Protocol.connectionLost(self, reason)
 
     def send_buffer(self, buf):
         logger.debug("%s: BaseClient::send_buffer(): sending %u bytes.",
@@ -291,8 +312,14 @@ class BaseClient(Protocol):
         return self.received_messages.pop(0)
 
 
-
 class BaseClientFactory(ClientFactory):
+    """A BaseClientFactory creates, manages and destroys a single BaseClient
+    instance.
+
+    A BaseClient instance reflects, essentially, an open socket.  The factory
+    represents the supporting infrastructure for that socket or session, and
+    forms a point of reference for communicating with the BaseClient itself.
+    """
     def __init__(self, robot, name, host, port, version):
         self.robot = robot
         self.name = name
@@ -316,19 +343,19 @@ class BaseClientFactory(ClientFactory):
 
     def startedConnecting(self, connector):
         logger.debug("%s: BaseClient::startedConnecting()", self.protocol_name)
-        return ClientFactory.startedConnecting(connector)
+        return ClientFactory.startedConnecting(self, connector)
 
     def clientConnectionLost(self, connector, reason):
         logger.debug("%s: BaseClient::clientConnectionLost(): %s",
                      self.protocol_name, reason)
         self.session = None
-        return ClientFactory.clientConnectionLost(connector, reason)
+        return ClientFactory.clientConnectionLost(self, connector, reason)
 
     def clientConnectionFailed(self, connector, reason):
         logger.debug("%s: BaseClient::clientConnectionFailed(): %s",
                      self.protocol_name, reason)
         self.session = None
-        return ClientFactory.clientConnectionFailed(connector, reason)
+        return ClientFactory.clientConnectionFailed(self, connector, reason)
 
     def buildProtocol(self, address):
         logger.debug("%s: BaseClient::buildProtocol(): connected.")
@@ -353,6 +380,9 @@ class BaseClientFactory(ClientFactory):
 
 
 class BaseRobot(object):
+    """Common functionality for all Robot Framework protocol simulator
+    libraries."""
+
     def __init__(self):
         self.clients = {}
         self.servers = {}
@@ -360,9 +390,6 @@ class BaseRobot(object):
         self.messages = {}
         self.protocol_name = ''
         return
-
-    def ping(self):
-        return True
 
     def reset(self):
         """Delete all defined messages, clients and servers.
@@ -387,7 +414,7 @@ class BaseRobot(object):
 
         # Clean up servers.
         for name, server in self.servers.items():
-            if server.endpoint():
+            if server.endpoint:
                 server.destroy()
             del self.servers[name]
 
@@ -440,6 +467,276 @@ class BaseRobot(object):
         factory = self.servers.pop(name)
         factory.destroy()
         return
+
+    def server_start_listening(self, server_name):
+        """Start listening for connections from clients."""
+
+        server = self.servers.get(server_name)
+        if not server:
+            raise errors.NoSuchServerError(server_name)
+
+        server.start_listening()
+        return
+
+    def server_stop_listening(self, server_name):
+        """Stop listening for connections from clients."""
+
+        server = self.servers.get(server_name)
+        if not server:
+            raise errors.NoSuchServerError(server_name)
+
+        server.stopListening()
+        return
+
+    def server_has_new_session(self, server_name):
+        """Returns true if an unhandled client session is queued."""
+
+        server = self.servers.get(server_name)
+        if not server:
+            raise errors.NoSuchServerError(server_name)
+
+        num_new_sessions = len(server.new_sessions)
+        if not num_new_sessions:
+            raise errors.NoNewServerSessionsError()
+
+        return
+
+    def get_new_server_session(self, server_name, session_name):
+        """Get next unhandled client session."""
+
+        session = self.servers.get(server_name)
+        if not session:
+            raise errors.NoSuchServerError(server_name)
+
+        if session_name in self.server_sessions:
+            raise errors.DuplicateServerSessionError(session_name)
+
+        self.server_sessions[session_name] = session
+        session.accept_session(session_name)
+        return
+
+    def disconnect_server_session(self, session_name):
+        """Disconnect specified session."""
+
+        session = self.server_sessions.get(session_name)
+        if not session:
+            raise errors.NoSuchServerSessionError(session_name)
+
+        session.disconnect_session(session_name)
+        return
+
+    def set_server_send_heartbeats(self,
+                                   session_name,
+                                   send_heartbeats_automatically):
+        """Control whether server session sends heartbeats automatically."""
+
+        session = self.server_sessions.get(session_name)
+        if not session:
+            raise errors.NoSuchServerSessionError(session_name)
+
+        session.auto_send_heartbeats \
+            = string_to_boolean(send_heartbeats_automatically)
+        return
+
+    def set_server_flushing(self, session_name, flush_messages_automatically):
+        """Control whether session flushes outbound messages automatically."""
+
+        session = self.server_sessions.get(session_name)
+        if not session:
+            raise errors.NoSuchServerSessionError(session_name)
+
+        session.auto_flush = string_to_boolean(flush_messages_automatically)
+        return
+
+    def get_server_receive_queue_size(self, session_name):
+        """Get number of queued inbound messages for server session."""
+
+        session = self.server_sessions.get(session_name)
+        if not session:
+            raise errors.NoSuchServerSessionError(session_name)
+
+        return session.get_session_queue_length(session_name)
+
+    def server_has_received_message(self, session_name):
+        """Check server session's received queue is not empty."""
+
+        if self.get_server_receive_queue_size(session_name) == 0:
+            raise errors.ReceivedMessageQueueEmpty(session_name)
+        return
+
+    def get_server_message(self, session_name, message_name):
+        """Get next queued received message for session."""
+
+        session = self.server_sessions.get(session_name)
+        if not session:
+            raise errors.NoSuchServerSessionError(session_name)
+
+        if message_name in self.messages:
+            raise errors.DuplicateMessageError(message_name)
+
+        self.messages[message_name] = session.get_received_message(session_name)
+        return
+
+    def send_server_message(self, session_name, message_name):
+        """Send message from the specified server session."""
+
+        session = self.server_sessions.get(session_name)
+        if not session:
+            raise errors.NoSuchServerSessionError(session_name)
+
+        msg = self.messages.get(message_name)
+        if not msg:
+            raise errors.NoSuchMessageError(message_name)
+
+        session.send_message(session_name, msg)
+        return
+
+    def create_client(self, client_name, host, port, version):
+        """Create a client session."""
+
+        if client_name in self.clients:
+            raise errors.DuplicateClientError(client_name)
+
+        factory = BaseClientFactory(self, client_name, host, port, version)
+        self.clients[client_name] = factory
+        return
+
+    def destroy_client(self, client_name):
+        """Destroy a client session."""
+
+        if client_name not in self.clients:
+            raise errors.NoSuchClientError(client_name)
+
+        factory = self.clients.pop(client_name)
+        factory.destroy()
+        return
+
+    def connect_client(self, client_name):
+        """Initiate connection to the configured server."""
+
+        client = self.clients.get(client_name)
+        if not client:
+            raise errors.NoSuchClientError(client_name)
+
+        if client.session:
+            raise errors.DuplicateClientSessionError(client_name)
+
+        reactor.connectTCP(client.host, int(client.port), client)
+        return
+
+    def disconnect_client(self, client_name):
+        """Initiate disconnection from the configured server."""
+
+        if client_name not in self.clients:
+            raise errors.NoSuchClientError(client_name)
+
+        self.clients[client_name].disconnect_session()
+        return
+
+    def set_client_send_heartbeats(self,
+                                   client_name,
+                                   send_heartbeats_automatically):
+        """Control whether client session sends heartbeats automatically."""
+
+        session = self.clients.get(client_name)
+        if not session:
+            raise errors.NoSuchClientError(client_name)
+
+        session.auto_send_heartbeats \
+            = string_to_boolean(send_heartbeats_automatically)
+        return
+
+    def set_client_receive_heartbeats(self,
+                                      client_name,
+                                      receive_heartbeats_automatically):
+        """Control whether client session receives heartbeats automatically."""
+
+        session = self.clients.get(client_name)
+        if not session:
+            raise errors.NoSuchClientError(client_name)
+
+        session.auto_receive_heartbeats \
+            = string_to_boolean(receive_heartbeats_automatically)
+        return
+
+    def set_client_flushing(self, client_name, flush_messages_automatically):
+        """Control whether sent messages are immediately flushed."""
+        session = self.clients.get(client_name)
+        if not session:
+            raise errors.NoSuchClientError(client_name)
+
+        session.auto_flush = string_to_boolean(flush_messages_automatically)
+        return
+
+    def flush_client_send_queue(self, client_name):
+        """Manually flush the outbound message queue."""
+
+        client_session = self.clients.get(client_name)
+        if not client_session:
+            raise errors.NoSuchClientError(client_name)
+
+        if not client_session.session:
+            raise errors.ClientSessionNotConnectedError(client_name)
+
+        client_session.session.flush()
+        return
+
+    def get_client_receive_queue_size(self, client_name):
+        """Get number of queued messages for client session."""
+
+        client_session = self.clients.get(client_name)
+        if not client_session:
+            raise errors.NoSuchClientError(client_name)
+
+        if not client_session.session:
+            raise errors.ClientSessionNotConnectedError(client_name)
+
+        queue_length = len(client_session.session.received_messages)
+        return queue_length
+
+    def client_has_received_messages(self, client_name):
+        """Check whether client session has any received messages queued."""
+
+        queue_length = self.get_client_receive_queue_size(client_name)
+        if queue_length < 1:
+            raise errors.ReceivedMessageQueueEmpty(client_name)
+        return
+
+    def get_client_message(self, client_name, message_name):
+        """Get next queued received message from client session."""
+
+        client = self.clients.get(client_name)
+        if not client:
+            raise errors.NoSuchClientError(client_name)
+
+        msg = self.messages.get(message_name)
+        if not msg:
+            raise errors.NoSuchMessageError(message_name)
+
+        if not client.session:
+            raise errors.ClientSessionNotConnectedError(client_name)
+
+        self.messages[message_name] = client.session.get_received_message()
+        return
+
+    def send_client_message(self, client_name, message_name):
+        """Send a message from the named client session."""
+
+        client = self.clients.get(client_name)
+        if not client:
+            raise errors.NoSuchClientError(client_name)
+
+        msg = self.messages.get(message_name)
+        if not msg:
+            raise errors.NoSuchMessageError(message_name)
+
+        if not client.session:
+            raise errors.ClientSessionNotConnectedError(client_name)
+
+        client.session.send_buffer(msg.Encode())
+        return
+
+
 
 
 ########################################################################

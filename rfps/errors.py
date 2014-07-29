@@ -36,6 +36,16 @@ class BadMessageTypeError(exceptions.ValueError):
     pass
 
 
+class ClientSessionNotConnectedError(exceptions.Exception):
+    """The specified client session is not connected."""
+    pass
+
+
+class DuplicateClientError(exceptions.LookupError):
+    """A client with this name already exists."""
+    pass
+
+
 class DuplicateMessageError(exceptions.LookupError):
     """A message with this name already exists."""
     pass
@@ -53,6 +63,11 @@ class DuplicateServerSessionError(exceptions.LookupError):
 
 class NoNewServerSessionsError(exceptions.LookupError):
     """No accepted but unhandled server sessions exists."""
+    pass
+
+
+class NoSuchClientError(exceptions.LookupError):
+    """No client with this name exists."""
     pass
 
 

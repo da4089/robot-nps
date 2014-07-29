@@ -20,6 +20,7 @@
 ########################################################################
 
 import argparse
+import logging
 import rfps
 
 from twistedremoteserver import TwistedRemoteServer
@@ -31,6 +32,20 @@ from twisted.web.server import Site
 ########################################################################
 
 if __name__ == "__main__":
+    # Logging
+    root = logging.getLogger()
+    root.setLevel(logging.DEBUG)
+
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.DEBUG)
+
+    fmt = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    ch.setFormatter(fmt)
+    root.addHandler(ch)
+
+    logging.getLogger().debug("Logging initialised.")
+
+
     parser = argparse.ArgumentParser(description="A Robot Framework remote "
                                                  "server that provides both "
                                                  "client and server-side "
@@ -66,9 +81,6 @@ if __name__ == "__main__":
     else:
         port_file = args.file
 
-    print interface
-    print port
-
     ouch_robot = rfps.OuchRobot()
     robot_api = TwistedRemoteServer(ouch_robot, interface, port)
 
@@ -80,7 +92,10 @@ if __name__ == "__main__":
         f = open(port_file, "w")
         f.write("%u\n" % listener.getHost().port)
         f.close()
-    print listener.getHost().port
+
+    logging.getLogger().info("Listening on %s:%u",
+                             interface,
+                             listener.getHost().port)
     reactor.run()
 
 
