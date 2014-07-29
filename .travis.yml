@@ -8,7 +8,7 @@ script:
  - cd unit_tests
  - env PYTHONOPATH=.. python -m unittest --verbose test_all
  - cd ..
- - env PYTHONPATH=. python ./nps-ouch -f port &
+ - env PYTHONPATH=. python ./rnps-ouch -f port &
  - while test ! -f port; do sleep 1; done
  - cd robot_tests
  - pybot -v OUCH_PORT:`cat ../port` *.robot
