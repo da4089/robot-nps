@@ -85,7 +85,7 @@ class BaseServerSession(Protocol):
 
     def send_buffer(self, buf):
         logger.debug("%s: BaseServerSession::send_buffer(): %u bytes",
-                     self.protocol_name, len(buffer))
+                     self.protocol_name, len(buf))
         self.sent += buf
 
         if self.factory.auto_flush:
@@ -230,6 +230,9 @@ class BaseServerFactory(ServerFactory):
         if not session:
             raise errors.NoSuchServerSessionError(session_name)
 
+        logger.debug("send_message(%s, %s)",
+                     session_name,
+                     message.__class__.__name__)
         return session.send_buffer(message.encode())
 
     def destroy(self):
@@ -303,7 +306,7 @@ class BaseClient(Protocol):
         self.transport.loseConnection()
         return
 
-    def receive_queue_size(self):
+    def receive_queue_length(self):
         return len(self.received_messages)
 
     def get_received_message(self):
@@ -588,6 +591,9 @@ class BaseRobot(object):
         if not msg:
             raise errors.NoSuchMessageError(message_name)
 
+        logger.debug("send_server_message(%s, %s",
+                     session_name,
+                     msg.__class__.__name__)
         session.send_message(session_name, msg)
         return
 
@@ -684,20 +690,24 @@ class BaseRobot(object):
     def get_client_receive_queue_size(self, client_name):
         """Get number of queued messages for client session."""
 
-        client_session = self.clients.get(client_name)
-        if not client_session:
+        client = self.clients.get(client_name)
+        if not client:
             raise errors.NoSuchClientError(client_name)
 
-        if not client_session.session:
+        if not client.session:
             raise errors.ClientSessionNotConnectedError(client_name)
 
-        queue_length = len(client_session.session.received_messages)
+        queue_length = client.session.receive_queue_length()
+        logger.debug("get_client_receive_queue_size(%s) => %u",
+                     client_name, queue_length)
         return queue_length
 
-    def client_has_received_messages(self, client_name):
+    def client_has_received_message(self, client_name):
         """Check whether client session has any received messages queued."""
 
         queue_length = self.get_client_receive_queue_size(client_name)
+        logger.debug("client_has_received_message() => %s",
+                     "true" if queue_length > 0 else "false")
         if queue_length < 1:
             raise errors.ReceivedMessageQueueEmpty(client_name)
         return
@@ -709,12 +719,11 @@ class BaseRobot(object):
         if not client:
             raise errors.NoSuchClientError(client_name)
 
-        msg = self.messages.get(message_name)
-        if not msg:
-            raise errors.NoSuchMessageError(message_name)
-
         if not client.session:
             raise errors.ClientSessionNotConnectedError(client_name)
+
+        if message_name in self.messages:
+            raise errors.DuplicateMessageError(message_name)
 
         self.messages[message_name] = client.session.get_received_message()
         return
@@ -733,7 +742,7 @@ class BaseRobot(object):
         if not client.session:
             raise errors.ClientSessionNotConnectedError(client_name)
 
-        client.session.send_buffer(msg.Encode())
+        client.session.send_buffer(msg.encode())
         return
 
 

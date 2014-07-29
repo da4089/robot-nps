@@ -174,6 +174,7 @@ class OuchRobot(BaseRobot):
             raise errors.BadFieldNameError(field)
 
         setattr(msg, field, value)
+        logger.debug("set_soup_field(%s, %s, %s)", name, field, value)
         return
 
     def get_soup_field(self, message_name, field_name):
