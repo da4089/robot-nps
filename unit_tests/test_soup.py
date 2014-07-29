@@ -1,5 +1,5 @@
 ########################################################################
-# robot-fps, Financial Protocol Simulator for Robot Framework
+# robot-nps, Network Protocol Simulator for Robot Framework
 #
 # Copyright (C) 2014 David Arnold
 #
@@ -19,7 +19,7 @@
 ########################################################################
 
 import unittest
-from rfps import soup
+from rnps import soup
 
 
 class SoupTests(unittest.TestCase):

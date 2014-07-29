@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 ########################################################################
-# robot-fps, Financial Protocol Simulator for Robot Framework
+# robot-nps, Network Protocol Simulator for Robot Framework
 #
 # Copyright (C) 2014 David Arnold
 #
@@ -22,11 +22,11 @@
 from distutils.core import setup
 
 
-setup(name="rfps",
+setup(name="rnps",
       version="1.0a1",
-      description="Robot Framework Financial Protocols Simulator",
-      packages=["rfps"],
-      scripts=["fps-ouch"])
+      description="Robot Framework Network Protocol Simulator",
+      packages=["rnps"],
+      scripts=["rnps-ouch"])
 
 
 ########################################################################

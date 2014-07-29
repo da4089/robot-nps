@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 ########################################################################
-# robot-fps, Financial Protocol Simulator for Robot Framework
+# robot-nps, Network Protocol Simulator for Robot Framework
 #
 # Copyright (C) 2014 David Arnold
 #
@@ -21,7 +21,7 @@
 
 import argparse
 import logging
-import rfps
+import rnps
 
 from twistedremoteserver import TwistedRemoteServer
 from twisted.internet import reactor
@@ -81,7 +81,7 @@ if __name__ == "__main__":
     else:
         port_file = args.file
 
-    ouch_robot = rfps.OuchRobot()
+    ouch_robot = rnps.OuchRobot()
     robot_api = TwistedRemoteServer(ouch_robot, interface, port)
 
     root = Resource()
