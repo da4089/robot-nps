@@ -436,39 +436,39 @@ class BaseRobot(object):
         self.messages = {}
         return
 
-    def create_server(self, name, port, version):
+    def create_server(self, server_name, port, version):
         """Create a server.
 
-        The `name` is used to specify this server using
+        The `server_name` is used to specify this server using
         other keywords.  `port` is the TCP port number on
         which this server listens for client connections.
         `version` is the protocol version to be offered.
 
         See also 'Destroy Server'."""
 
-        if name in self.servers:
-            raise errors.DuplicateServerError(name)
+        if server_name in self.servers:
+            raise errors.DuplicateServerError(server_name)
 
-        factory = BaseServerFactory(self, name, port, version)
-        self.servers[name] = factory
+        factory = BaseServerFactory(self, server_name, port, version)
+        self.servers[server_name] = factory
 
         logger.info("%s: new server: %s @ %u, v%u",
-                    self.protocol_name, name, port, version)
+                    self.protocol_name, server_name, port, version)
         return
 
-    def destroy_server(self, name):
+    def destroy_server(self, server_name):
         """Destroy the named server.
 
-        `name` of the server to destroy, as given when it
-        was created.
+        `server_name` of the server to destroy, as given when it was created.
 
         See also 'Create Server'."""
 
-        if not name in self.servers:
-            raise errors.NoSuchServerError(name)
+        if not server_name in self.servers:
+            raise errors.NoSuchServerError(server_name)
 
-        factory = self.servers.pop(name)
+        factory = self.servers.pop(server_name)
         factory.destroy()
+        logger.debug("destroy_server(%s)", server_name)
         return
 
     def server_start_listening(self, server_name):
@@ -526,6 +526,7 @@ class BaseRobot(object):
             raise errors.NoSuchServerSessionError(session_name)
 
         session.disconnect_session(session_name)
+        logger.debug("disconnect_server_session(%s)", session_name)
         return
 
     def set_server_send_heartbeats(self,
@@ -539,6 +540,19 @@ class BaseRobot(object):
 
         session.auto_send_heartbeats \
             = string_to_boolean(send_heartbeats_automatically)
+        return
+
+    def set_server_receive_heartbeats(self,
+                                      session_name,
+                                      receive_heartbeats_automatically):
+        """Control whether server session receives heartbeats automatically."""
+
+        session = self.server_sessions.get(session_name)
+        if not session:
+            raise errors.NoSuchServerSessionError(session_name)
+
+        session.auto_receive_heartbeats \
+            = string_to_boolean(receive_heartbeats_automatically)
         return
 
     def set_server_flushing(self, session_name, flush_messages_automatically):
