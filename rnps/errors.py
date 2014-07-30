@@ -86,6 +86,11 @@ class NoSuchServerSessionError(exceptions.LookupError):
     pass
 
 
+class NotAnOuchMessageError(exceptions.ValueError):
+    """No OUCH payload found in carrier protocol message."""
+    pass
+
+
 class ReceivedMessageQueueEmpty(exceptions.EOFError):
     """Specified message queue is empty."""
     pass

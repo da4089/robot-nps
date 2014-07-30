@@ -79,6 +79,16 @@ class SoupMessage(object):
     def get_type(self):
         return self._type
 
+    def has_payload(self):
+        return hasattr(self, "_payload")
+
+    def set_payload(self, payload):
+        self._payload = payload
+        return
+
+    def get_payload(self):
+        return None if not self.has_payload() else self._payload
+
 
 class ClientHeartbeat(SoupMessage):
     _format = '!Hc'

@@ -281,17 +281,15 @@ class BaseClient(Protocol):
         raise NotImplementedError("BaseClient::dataReceived()")
 
     def connectionMade(self):
-        logger.debug("%s: BaseClient::connectionMade()", self.protocol_name)
+        logger.debug("connectionMade()")
         return Protocol.connectionMade(self)
 
     def connectionLost(self, reason=connectionDone):
-        logger.debug("%s: BaseClient::connectionLost(): %s",
-                     self.protocol_name, str(reason))
+        logger.debug("connectionLost(): %s", str(reason))
         return Protocol.connectionLost(self, reason)
 
     def send_buffer(self, buf):
-        logger.debug("%s: BaseClient::send_buffer(): sending %u bytes.",
-                     self.protocol_name, len(buf))
+        logger.debug("send_buffer(): sending %u bytes.", len(buf))
         self.sent += buf
 
         if self.factory.auto_flush:
@@ -300,8 +298,7 @@ class BaseClient(Protocol):
         return
 
     def flush(self):
-        logger.debug("%s: BaseClient::flush(): flushing %u bytes.",
-                     self.protocol_name, len(self.sent))
+        logger.debug("flush(): flushing %u bytes.", len(self.sent))
         self.transport.write(self.sent)
         self.sent = ''
         return

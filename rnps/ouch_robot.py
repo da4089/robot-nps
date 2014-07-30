@@ -230,11 +230,10 @@ class OuchRobot(BaseRobot):
         if not msg:
             raise errors.NoSuchMessageError(message_name)
 
-        if not hasattr(msg, "_payload"):
+        if not msg.has_payload():
             raise errors.NotAnOuchMessageError(message_name)
 
-        #FIXME: accessors
-        return msg._payload._ouch_type
+        return msg.get_payload().get_type()
 
     def get_ouch_field(self, message_name, field_name):
         """Get an OUCH message field from this message."""
@@ -243,13 +242,10 @@ class OuchRobot(BaseRobot):
         if not msg:
             raise errors.NoSuchMessageError(message_name)
 
-        if not hasattr(msg, "_payload"):
+        if not msg.has_payload():
             raise errors.NotAnOuchMessageError(message_name)
 
-        if field_name[0:1] == "_" or not hasattr(msg._payload, field_name):
-            raise errors.BadFieldNameError(field_name)
-
-        return getattr(msg._payload, field_name)
+        return msg.get_payload().get_field(field_name)
 
     def set_ouch_field(self, message_name, field_name, value):
         """Set an OUCH message field value in this message."""
@@ -258,16 +254,13 @@ class OuchRobot(BaseRobot):
         if not msg:
             raise errors.NoSuchMessageError(message_name)
 
-        if not hasattr(msg, "_payload"):
+        if not msg.has_payload():
             raise errors.NotAnOuchMessageError(message_name)
-
-        if field_name[0:1] == "_" or not hasattr(msg._payload, field_name):
-            raise errors.BadFieldNameError(field_name)
 
         if field_name in ouch4.INTEGER_FIELDS:
             value = int(value)
 
-        setattr(msg._payload, field_name, value)
+        msg.get_payload().set_field(field_name, value)
         logger.debug("set_ouch_field(%s, %s, %s)",
                      message_name, field_name, value)
         return

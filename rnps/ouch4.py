@@ -31,6 +31,7 @@
 ########################################################################
 
 import struct
+import errors
 
 
 ########################################################################
@@ -61,6 +62,22 @@ class OuchMessage(object):
     
     def get_type(self):
         return self._ouch_type
+
+    def set_field(self, field_name, value):
+        if field_name[0:1] == "_" or not hasattr(self, field_name):
+            raise errors.BadFieldNameError(field_name)
+
+        setattr(self, field_name, value)
+        return
+
+    def has_field(self, field_name):
+        return hasattr(self, field_name)
+
+    def get_field(self, field_name):
+        if field_name[0:1] == "_" or not hasattr(self, field_name):
+            raise errors.BadFieldNameError(field_name)
+
+        return getattr(self, field_name)
 
 
 class EnterOrder(OuchMessage):
