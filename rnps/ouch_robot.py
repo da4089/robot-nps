@@ -46,15 +46,22 @@ class OuchServerSession(BaseServerSession):
                 return
 
             msg, self.receive_buffer = soupbin.get_message(self.receive_buffer)
+            soup_type = msg.get_type()
 
-            if msg.get_type() == 'R' and self.factory.auto_receive_heartbeats:
+            if soup_type == 'R' and self.factory.auto_receive_heartbeats:
                 logger.info("OUCH: Server session [%s]: consumed heartbeat",
                             self.factory.name)
                 return
 
+            if soup_type == 'S' or soup_type == 'U':
+                logger.debug("server session got soup_type [%s], "
+                             "length %u, ouch_type [%s]",
+                             soup_type, len(msg.message), msg.message[0:1])
+
+                msg._payload = ouch4.get_message(soup_type, msg.message)
+
             self.received_messages.append(msg)
-            logger.info("%s: server queuing %s",
-                        self.factory.name, msg.get_type())
+            logger.info("%s: server queuing %s", self.factory.name, soup_type)
 
         return
 
@@ -86,15 +93,22 @@ class OuchClient(BaseClient):
             msg, self.receive_buffer = soupbin.get_message(self.receive_buffer)
             if not msg:
                 return
+            soup_type = msg.get_type()
 
-            if msg.get_type() == 'H' and self.factory.auto_receive_heartbeats:
+            if soup_type == 'H' and self.factory.auto_receive_heartbeats:
                 logger.info("OUCH: Session [%s]: consumed heartbeat",
                             self.factory.name)
                 return
 
+            if soup_type == 'S' or soup_type == 'U':
+                logger.debug("client got soup_type [%s], "
+                             "length %u, ouch_type [%s]",
+                             soup_type, len(msg.message), msg.message[0:1])
+
+                msg._payload = ouch4.get_message(soup_type, msg.message)
+
             self.received_messages.append(msg)
-            logger.info("%s: client queuing %s",
-                        self.factory.name, msg.get_type())
+            logger.info("%s: client queuing %s", self.factory.name, soup_type)
 
         return
 
@@ -196,7 +210,6 @@ class OuchRobot(BaseRobot):
         if not msg:
             raise errors.NoSuchMessageError(message_name)
 
-        constructor = None
         if msg.get_type() == 'U':
             constructor = ouch4.UNSEQUENCED_MESSAGES.get(ouch_type)
         elif msg.get_type() == 'S':
@@ -255,6 +268,8 @@ class OuchRobot(BaseRobot):
             value = int(value)
 
         setattr(msg._payload, field_name, value)
+        logger.debug("set_ouch_field(%s, %s, %s)",
+                     message_name, field_name, value)
         return
 
 

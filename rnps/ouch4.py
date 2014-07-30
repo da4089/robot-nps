@@ -35,11 +35,32 @@ import struct
 
 ########################################################################
 
+def get_message(soup_type, buf):
+    if len(buf) < 1:
+        return None
+
+    if soup_type == 'S':
+        constructor = SEQUENCED_MESSAGES.get(buf[0])
+    elif soup_type == 'U':
+        constructor = UNSEQUENCED_MESSAGES.get(buf[0])
+    else:
+        return None
+
+    if not constructor:
+        return None
+
+    msg = constructor()
+    msg.decode(buf)
+    return msg
+
+
+########################################################################
+
 class OuchMessage(object):
-    _type = None
+    _ouch_type = None
     
     def get_type(self):
-        return self._type
+        return self._ouch_type
 
 
 class EnterOrder(OuchMessage):

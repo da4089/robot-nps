@@ -233,6 +233,10 @@ class BaseServerFactory(ServerFactory):
         logger.debug("send_message(%s, %s)",
                      session_name,
                      message.__class__.__name__)
+
+        if hasattr(message, "_payload"):
+            message.message = message._payload.encode()
+
         return session.send_buffer(message.encode())
 
     def destroy(self):
@@ -605,7 +609,7 @@ class BaseRobot(object):
         if not msg:
             raise errors.NoSuchMessageError(message_name)
 
-        logger.debug("send_server_message(%s, %s",
+        logger.debug("send_server_message(%s, %s)",
                      session_name,
                      msg.__class__.__name__)
         session.send_message(session_name, msg)
@@ -755,6 +759,9 @@ class BaseRobot(object):
 
         if not client.session:
             raise errors.ClientSessionNotConnectedError(client_name)
+
+        if hasattr(msg, "_payload"):
+            msg.message = msg._payload.encode()
 
         client.session.send_buffer(msg.encode())
         return
