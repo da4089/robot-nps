@@ -476,7 +476,6 @@ class Executed(OuchMessage):
                            self.match_number)
 
     def decode(self, buf):
-        print len(buf)
         fields = struct.unpack(self._format, buf)
         assert fields[0] == self._ouch_type
         self.timestamp = fields[1]
