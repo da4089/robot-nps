@@ -14,3 +14,6 @@ script:
  - pybot -v OUCH_PORT:`cat ../port` *.robot
  - cd ..
  - rm -f port
+ - cd docs
+ - make html
+ - cd ..
