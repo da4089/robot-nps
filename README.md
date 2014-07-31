@@ -34,8 +34,8 @@ Install robot-nps by running:
 Contribute
 ----------
 
-- Issue Tracker: github.com/da4089/robot-nps/issues
-- Source Code: github.com/da4089/robot-nps
+- Issue Tracker: https://github.com/da4089/robot-nps/issues
+- Source Code: https://github.com/da4089/robot-nps
 
 Support
 -------
