@@ -3,3 +3,4 @@
 Twisted
 robotframework
 -e git+git://github.com/da4089/PythonRemoteServer#egg=robotremoteserver
+sphinx
