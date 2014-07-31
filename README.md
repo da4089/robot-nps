@@ -1,9 +1,9 @@
 robot-nps
 =========
-Network protocol simulator for Robot Framework. [![Build Status](https://travis-ci.org/da4089/robot-fps.svg?branch=master)](https://travis-ci.org/da4089/robot-fps)
+Robot NPS is a Network Protocol Simulator for Robot Framework. [![Build Status](https://travis-ci.org/da4089/robot-nps.svg?branch=master)](https://travis-ci.org/da4089/robot-nps)
 
 Robot Framework is a system-testing framework, originally developed
-primary by Pekka Klarck at Nokia Siemens Networks.  It provides a
+primarily by Pekka Klarck at Nokia Siemens Networks.  It provides a
 simple language for writing tests, a range of libraries for different
 test features, and a standard protocol for so-called remote servers.
 
@@ -12,3 +12,36 @@ server sides of various application-layer network protocols, including
 financial order entry and market data protocols.  In combination with
 Robot Framework, tests can be written to exercise applications using
 these protocols.
+
+Features
+--------
+- Enables easy simulation of message-oriented application protocols.
+- Supports simulation of multiple peers (eg. client and server) within a single
+  process.
+- Supports distributed testing using multiple processes.
+- Runs on Linux, OSX and Windows.
+- Easily extended to support new protocols.
+
+Installation
+------------
+
+Install robot-nps by running:
+
+    pip install robot-nps
+
+Contribute
+----------
+
+- Issue Tracker: github.com/da4089/robot-nps/issues
+- Source Code: github.com/da4089/robot-nps
+
+Support
+-------
+
+If you are having issues, please let us know.
+We have a mailing list located at: robot-nps@googlegroups.com
+
+License
+-------
+
+The project is licensed under the GPLv3 license.
