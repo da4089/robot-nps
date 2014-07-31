@@ -22,9 +22,12 @@
 from distutils.core import setup
 
 
-setup(name="rnps",
-      version="1.0a1",
+setup(name="robot-nps",
+      version="1.0.0",
       description="Robot Framework Network Protocol Simulator",
+      url="https://github.com/da4089/robot-nps",
+      author="David Arnold",
+      author_email="d+robot-nps@0x1.org",
       packages=["rnps"],
       scripts=["rnps-ouch"])
 
