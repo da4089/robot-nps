@@ -22,6 +22,8 @@ Features
 - Runs on Linux, OSX and Windows.
 - Easily extended to support new protocols.
 
+Complete documentation available at http://robot-nps.readthedocs.org/en/latest/
+
 Installation
 ------------
 
