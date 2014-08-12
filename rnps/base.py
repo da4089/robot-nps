@@ -261,6 +261,8 @@ class BaseClient(Protocol):
 
     def __init__(self, factory, address):
         self.factory = factory
+        self.address = address
+
         self.sent = ''
         self.receive_buffer = ''
         self.received_messages = []
@@ -324,12 +326,16 @@ class BaseClientFactory(ClientFactory):
     represents the supporting infrastructure for that socket or session, and
     forms a point of reference for communicating with the BaseClient itself.
     """
-    def __init__(self, robot, name, host, port, version):
+    def __init__(self, robot, name,
+                 server_host, server_port,
+                 protocol_version, client_port):
         self.robot = robot
         self.name = name
-        self.host = host
-        self.port = port
-        self.version = version
+        self.host = server_host
+        self.port = server_port
+        self.version = protocol_version
+        self.local_port = client_port
+
         self.protocol_name = ''
         self.protocol = None
 
@@ -362,7 +368,8 @@ class BaseClientFactory(ClientFactory):
         return ClientFactory.clientConnectionFailed(self, connector, reason)
 
     def buildProtocol(self, address):
-        logger.debug("%s: BaseClient::buildProtocol(): connected.")
+        logger.debug("%s: BaseClient::buildProtocol(): connected.",
+                     self.protocol_name)
         self.session = self.protocol(self, address)
         return self.session
 
@@ -612,13 +619,17 @@ class BaseRobot(object):
         session.send_message(session_name, msg)
         return
 
-    def create_client(self, client_name, host, port, version):
+    def create_client(self, client_name,
+                      server_host, server_port,
+                      protocol_version, client_port="0"):
         """Create a client session."""
 
         if client_name in self.clients:
             raise errors.DuplicateClientError(client_name)
 
-        factory = BaseClientFactory(self, client_name, host, port, version)
+        factory = BaseClientFactory(self, client_name,
+                                    server_host, server_port,
+                                    protocol_version)
         self.clients[client_name] = factory
         return
 
@@ -630,6 +641,7 @@ class BaseRobot(object):
 
         factory = self.clients.pop(client_name)
         factory.destroy()
+        logger.debug("destroy_client(%s)", client_name)
         return
 
     def connect_client(self, client_name):
@@ -642,7 +654,8 @@ class BaseRobot(object):
         if client.session:
             raise errors.DuplicateClientSessionError(client_name)
 
-        reactor.connectTCP(client.host, int(client.port), client)
+        reactor.connectTCP(client.host, int(client.port), client,
+                           bindAddress=("0.0.0.0", int(client.local_port)))
         return
 
     def disconnect_client(self, client_name):

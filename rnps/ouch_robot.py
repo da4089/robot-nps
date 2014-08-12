@@ -114,8 +114,12 @@ class OuchClient(BaseClient):
 
 
 class OuchClientFactory(BaseClientFactory):
-    def __init__(self, robot, name, host, port, version):
-        BaseClientFactory.__init__(self, robot, name, host, port, version)
+    def __init__(self, robot, name,
+                 server_host, server_port,
+                 protocol_version, client_port):
+        BaseClientFactory.__init__(self, robot, name,
+                                   server_host, server_port,
+                                   protocol_version, client_port)
         self.set_protocol("OUCH", OuchClient)
         return
 
@@ -126,16 +130,21 @@ class OuchRobot(BaseRobot):
         BaseRobot.__init__(self)
         return
 
-    def create_client(self, client_name, host, port, version):
+    def create_client(self, client_name,
+                      server_host, server_port,
+                      protocol_version, client_port="0"):
         """Create an OUCH client session."""
 
         if client_name in self.clients:
             raise errors.DuplicateClientError(client_name)
 
-        client = OuchClientFactory(self, client_name, host, port, version)
+        client = OuchClientFactory(self, client_name,
+                                   server_host, server_port,
+                                   protocol_version, client_port)
         self.clients[client_name] = client
-        logger.info("Created OUCH client: %s @ %s:%s v%s",
-                    client_name, host, port, version)
+        logger.info("Created OUCH client: %s %s -> %s:%s v%s",
+                    client_name, client_port, server_host,
+                    server_port, protocol_version)
         return
 
     def create_server(self, server_name, port, version):
