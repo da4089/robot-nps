@@ -21,6 +21,7 @@
 import logging
 
 from twisted.internet import reactor
+from twisted.internet.error import ConnectionDone
 from twisted.internet.protocol import connectionDone, Protocol, ClientFactory,\
     ServerFactory
 
@@ -283,11 +284,21 @@ class BaseClient(Protocol):
         raise NotImplementedError("BaseClient::dataReceived()")
 
     def connectionMade(self):
-        logger.debug("connectionMade()")
+        logger.debug("connectionMade(): %s port %s %s:%s %s",
+                     self.factory.name,
+                     self.factory.local_port,
+                     self.factory.host, self.factory.port,
+                     self.protocol_name)
         return Protocol.connectionMade(self)
 
     def connectionLost(self, reason=connectionDone):
-        logger.debug("connectionLost(): %s", str(reason))
+        #logger.debug("connectionLost(): %s", str(reason))
+        logger.debug("connectionLost(): %s port %s to %s:%s %s%s",
+                     self.factory.name,
+                     self.factory.local_port,
+                     self.factory.host, self.factory.port,
+                     self.protocol_name,
+                     "" if type(reason) == ConnectionDone else ": %s" % str(reason))
         return Protocol.connectionLost(self, reason)
 
     def send_buffer(self, buf):
