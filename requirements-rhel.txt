@@ -1,0 +1,14 @@
+# RHEL6 / CentOS6 / etc
+#
+# RHEL includes Python 2.6 and Twisted 8.2 as part of its distribution
+# package set.  But, back in the 8.2 days, the Twisted package was
+# known as 'twisted_core' not 'Twisted', so we cannot just rely on pip
+# to figure out that it's already installed.  So there's this separate
+# requirements file.
+#
+# And, since we need it for Twisted anyway, we might as well install
+# the argparse backport for 2.6 here too.
+argparse
+robotframework
+-e git+git://github.com/da4089/PythonRemoteServer#egg=robotremoteserver
+sphinx
