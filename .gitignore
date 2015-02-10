@@ -55,6 +55,10 @@ docs/_build/
 # Robot Framework test results
 robot_tests/*.html
 robot_tests/*.xml
+log.html
+output.xml
+report.html
 
 # PyCharm
 .idea/
+
