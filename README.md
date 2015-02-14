@@ -1,6 +1,9 @@
 robot-nps
 =========
-Robot NPS is a Network Protocol Simulator for Robot Framework. [![Build Status](https://travis-ci.org/da4089/robot-nps.svg?branch=master)](https://travis-ci.org/da4089/robot-nps)
+Robot NPS is a Network Protocol Simulator for Robot Framework. 
+
+[![Build Status](https://travis-ci.org/da4089/robot-nps.svg?branch=master)](https://travis-ci.org/da4089/robot-nps)
+[![Code Health](https://landscape.io/github/da4089/robot-nps/master/landscape.svg?style=flat)](https://landscape.io/github/da4089/robot-nps/master)
 
 Robot Framework is a system-testing framework, originally developed
 primarily by Pekka Klarck at Nokia Siemens Networks.  It provides a
