@@ -399,14 +399,16 @@ class Replaced(OuchMessage):
 
 
 class Canceled(OuchMessage):
-    _format = '!cQ14sLc'
+    _format = '!c Q 14s L c Q B'
     _ouch_type = 'C'
 
     def __init__(self):
         self.timestamp = 0
         self.order_token = ''
-        self.decrement_shares = 0
-        self.reason = ''
+        self.order_book_id = 0
+        self.side = ''
+        self.order_id = 0
+        self.reason = 0
         return
 
     def encode(self):
@@ -414,7 +416,9 @@ class Canceled(OuchMessage):
                            self._ouch_type,
                            self.timestamp,
                            self.order_token.ljust(14),
-                           self.decrement_shares,
+                           self.order_book_id,
+                           self.side,
+                           self.order_id,
                            self.reason)
 
     def decode(self, buf):
@@ -422,8 +426,10 @@ class Canceled(OuchMessage):
         assert fields[0] == self._ouch_type
         self.timestamp = fields[1]
         self.order_token = fields[2].strip()
-        self.decrement_shares = fields[3]
-        self.reason = fields[4]
+        self.order_book_id = fields[3]
+        self.side = fields[4]
+        self.order_id = fields[5]
+        self.reason = fields[6]
         return
 
 
