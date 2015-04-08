@@ -40,8 +40,7 @@ from ouch4 import get_message, OuchMessage
 ########################################################################
 
 class EnterOrder(OuchMessage):
-    #_format = '!c 14s L c Q L B B 10s 15s 32s c L c c 4s 10s 20s 8s c Q'
-    _format = '!c14scL8sLL4scccLcc'
+    _format = '!c 14s L c Q L B B 10s 15s 32s c L c c 4s 10s 20s 8s c Q'
     _ouch_type = 'O'
 
     def __init__(self):
@@ -90,8 +89,6 @@ class EnterOrder(OuchMessage):
                            self.filler,
                            self.order_type,
                            self.short_sell_quantity)
-                           
-)
 
     def decode(self, buf):
         fields = struct.unpack(self._format, buf)
@@ -120,18 +117,25 @@ class EnterOrder(OuchMessage):
 
 
 class ReplaceOrder(OuchMessage):
-    _format = '!c14s14sLLLccL'
+    _format = '!c 14s 14s Q L B 10s 15s 32s c c 4s 10s 20s 8s Q'
     _ouch_type = 'U'
 
     def __init__(self):
         self.existing_order_token = ''
         self.replacement_order_token = ''
-        self.shares = 0
+        self.quantity = 0
         self.price = 0
-        self.time_in_force = 0
-        self.display = ''
-        self.intermarket_sweep_eligibility = ''
-        self.minimum_quantity = 0
+        self.open_close = 0
+        self.client_account = ''
+        self.customer_info = ''
+        self.exchange_info = ''
+        self.capacity = ''
+        self.directed_wholesale = ''
+        self.execution_venue = ''
+        self.intermediary_id = ''
+        self.order_origin = ''
+        self.filler = '        '
+        self.short_sell_quantity = 0
         return
 
     def encode(self):
@@ -139,24 +143,38 @@ class ReplaceOrder(OuchMessage):
                            self._ouch_type,
                            self.existing_order_token.ljust(14),
                            self.replacement_order_token.ljust(14),
-                           self.shares,
+                           self.quantity,
                            self.price,
-                           self.time_in_force,
-                           self.display,
-                           self.intermarket_sweep_eligibility,
-                           self.minimum_quantity)
+                           self.open_close,
+                           self.client_account,
+                           self.customer_info,
+                           self.exchange_info,
+                           self.capacity,
+                           self.directed_wholesale,
+                           self.execution_venue,
+                           self.intermediary_id,
+                           self.order_origin,
+                           self.filler,
+                           self.short_sell_quantity)
 
     def decode(self, buf):
         fields = struct.unpack(self._format, buf)
         assert fields[0] == self._ouch_type
         self.existing_order_token = fields[1].strip()
         self.replacement_order_token = fields[2].strip()
-        self.shares = fields[3]
-        self.price = fields[4]
-        self.time_in_force = fields[5]
-        self.display = fields[6]
-        self.intermarket_sweep_eligibility = fields[7]
-        self.minimum_quantity = fields[8]
+        self.quantity = int(fields[3])
+        self.price = int(fields[4])
+        self.open_close = int(fields[5])
+        self.client_account = fields[6]
+        self.customer_info = fields[7]
+        self.exchange_info = fields[8]
+        self.capacity = fields[9]
+        self.directed_wholesale = fields[10]
+        self.execution_venue = fields[11]
+        self.intermediary_id = fields[12]
+        self.order_origin = fields[13]
+        # filler
+        self.short_sell_quantity = int(fields[15])
         return
 
 
