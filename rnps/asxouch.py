@@ -20,119 +20,102 @@
 
 # Implements ASX OUCH as at 2015/02/25.
 #
-# OUCH4 is a simple order protocol.  It uses binary numbers, in contrast
-# to its precursor, OUCH3.  Messages are relatively compact, and require
-# a client-side state machine to maintain an accurate view of the active
-# order book.
+# ASX OUCH is implemented by NASDAQ OMX's Genium INET platform, as
+# deployed for ASX.  It's based on NASDAQ's OUCH4, but has a bunch of
+# extra fields.
 #
-# OUCH4 is typically encapsulated in the SoupBinTCP 3.0 or UFO framing
-# protocols.
+# Source documents:
+# - ASX Trade OUCH v1.0 (document #036435).
+# - ASX OUCH Message Specification, v2.0, 2 September 2013.
+# - ASX Trade Q2 2015 Release (SR8) Appendices to ASX Notice.
 
 ########################################################################
 
 import struct
 import errors
 
-
-########################################################################
-
-def get_message(soup_type, buf):
-    if len(buf) < 1:
-        return None
-
-    if soup_type == 'S':
-        constructor = SEQUENCED_MESSAGES.get(buf[0])
-    elif soup_type == 'U':
-        constructor = UNSEQUENCED_MESSAGES.get(buf[0])
-    else:
-        return None
-
-    if not constructor:
-        return None
-
-    msg = constructor()
-    msg.decode(buf)
-    return msg
+from ouch4 import get_message, OuchMessage
 
 
 ########################################################################
-
-class OuchMessage(object):
-    _ouch_type = None
-    
-    def get_type(self):
-        return self._ouch_type
-
-    def set_field(self, field_name, value):
-        if field_name[0:1] == "_" or not hasattr(self, field_name):
-            raise errors.BadFieldNameError(field_name)
-
-        setattr(self, field_name, value)
-        return
-
-    def has_field(self, field_name):
-        return hasattr(self, field_name)
-
-    def get_field(self, field_name):
-        if field_name[0:1] == "_" or not hasattr(self, field_name):
-            raise errors.BadFieldNameError(field_name)
-
-        return getattr(self, field_name)
-
 
 class EnterOrder(OuchMessage):
+    #_format = '!c 14s L c Q L B B 10s 15s 32s c L c c 4s 10s 20s 8s c Q'
     _format = '!c14scL8sLL4scccLcc'
     _ouch_type = 'O'
 
     def __init__(self):
         self.order_token = ''
-        self.buy_sell_indicator = ''
-        self.shares = 0
-        self.stock = ''
+        self.order_book_id = 0
+        self.side = ''
+        self.quantity = 0
         self.price = 0
         self.time_in_force = 0
-        self.firm = ''
-        self.display = ''
+        self.open_close = 0
+        self.client_account = ''
+        self.customer_info = ''
+        self.exchange_info = ''
+        self.clearing_participant = ''
+        self.crossing_key = 0
         self.capacity = ''
-        self.intermarket_sweep_eligibility = ''
-        self.minimum_quantity = 0
-        self.cross_type = ''
-        self.customer_type = ''
+        self.directed_wholesale = ''
+        self.execution_venue = ''
+        self.intermediary_id = ''
+        self.order_origin = ''
+        self.filler = '        '
+        self.order_type = ''
+        self.short_sell_quantity = 0
         return
 
     def encode(self):
         return struct.pack(self._format,
                            self._ouch_type,
                            self.order_token.ljust(14),
-                           self.buy_sell_indicator,
-                           self.shares,
-                           self.stock.ljust(8),
+                           self.order_book_id,
+                           self.side,
+                           self.quantity,
                            self.price,
                            self.time_in_force,
-                           self.firm.ljust(4),
-                           self.display,
+                           self.open_close,
+                           self.client_account,
+                           self.customer_info,
+                           self.exchange_info,
+                           self.clearing_participant,
+                           self.crossing_key,
                            self.capacity,
-                           self.intermarket_sweep_eligibility,
-                           self.minimum_quantity,
-                           self.cross_type,
-                           self.customer_type)
+                           self.directed_wholesale,
+                           self.execution_venue,
+                           self.intermediary_id,
+                           self.order_origin,
+                           self.filler,
+                           self.order_type,
+                           self.short_sell_quantity)
+                           
+)
 
     def decode(self, buf):
         fields = struct.unpack(self._format, buf)
         assert fields[0] == self._ouch_type
         self.order_token = fields[1].strip()
-        self.buy_sell_indicator = fields[2]
-        self.shares = fields[3]
-        self.stock = fields[4].strip()
-        self.price = fields[5]
-        self.time_in_force = fields[6]
-        self.firm = fields[7].strip()
-        self.display = fields[8]
-        self.capacity = fields[9]
-        self.intermarket_sweep_eligibility = fields[10]
-        self.minimum_quantity = fields[11]
-        self.cross_type = fields[12]
-        self.customer_type = fields[13]
+        self.order_book_id = int(fields[2])
+        self.side = fields[3]
+        self.quantity = int(fields[4])
+        self.price = int(fields[5])
+        self.time_in_force = int(fields[6])
+        self.open_close = int(fields[7])
+        self.client_account = fields[8].strip()
+        self.customer_info = fields[9].strip()
+        self.exchange_info = fields[10].strip()
+        self.clearing_participant = fields[11]
+        self.crossing_key = int(fields[12])
+        self.capacity = fields[13]
+        self.directed_wholesale = fields[14]
+        self.execution_venue = fields[15]
+        self.intermediary_id = fields[16].strip()
+        self.order_origin = fields[17].strip()
+        # filler (8 spaces)
+        self.order_type = fields[19]
+        self.short_sell_quantity = int(fields[20])
         return
 
 
