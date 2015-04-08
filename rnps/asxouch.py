@@ -407,44 +407,6 @@ class Canceled(OuchMessage):
         return
 
 
-class AIQCanceled(OuchMessage):
-    _format = '!cQ14sLcLLc'
-    _ouch_type = 'D'
-
-    def __init__(self):
-        self.timestamp = 0
-        self.order_token = ''
-        self.decrement_shares = 0
-        self.reason = ''
-        self.quantity_prevented_from_trading = 0
-        self.execution_price = 0
-        self.liquidity_flag = ''
-        return
-
-    def encode(self):
-        return struct.pack(self._format,
-                           self._ouch_type,
-                           self.timestamp,
-                           self.order_token.ljust(14),
-                           self.decrement_shares,
-                           self.reason,
-                           self.quantity_prevented_from_trading,
-                           self.execution_price,
-                           self.liquidity_flag)
-
-    def decode(self, buf):
-        fields = struct.unpack(self._format, buf)
-        assert fields[0] == self._ouch_type
-        self.timestamp = fields[1]
-        self.order_token = fields[2].strip()
-        self.decrement_shares = fields[3]
-        self.reason = fields[4]
-        self.quantity_prevented_from_trading = fields[5]
-        self.execution_price = fields[6]
-        self.liquidity_flag = fields[7]
-        return
-
-
 class Executed(OuchMessage):
     _format = '!cQ14sLLcQ'
     _ouch_type = 'E'
@@ -480,67 +442,6 @@ class Executed(OuchMessage):
         return
     
 
-class BrokenTrade(OuchMessage):
-    _format = '!cQ14sQc'
-    _ouch_type = 'B'
-
-    def __init__(self):
-        self.timestamp = 0
-        self.order_token = ''
-        self.match_number = 0
-        self.reason = ''
-        return
-
-    def encode(self):
-        return struct.pack(self._format,
-                           self._ouch_type,
-                           self.timestamp,
-                           self.order_token.ljust(14),
-                           self.match_number,
-                           self.reason)
-
-    def decode(self, buf):
-        fields = struct.unpack(self._format, buf)
-        assert fields[0] == self._ouch_type
-        self.timestamp = fields[1]
-        self.order_token = fields[2].strip()
-        self.match_number = fields[3]
-        self.reason = fields[4]
-        return
-
-
-class PriceCorrection(OuchMessage):
-    _format = '!cQ14sQLc'
-    _ouch_type = 'K'
-
-    def __init__(self):
-        self.timestamp = 0
-        self.order_token = ''
-        self.match_number = 0
-        self.new_execution_price = 0
-        self.reason = ''
-        return
-
-    def encode(self):
-        return struct.pack(self._format,
-                           self._ouch_type,
-                           self.timestamp,
-                           self.order_token.ljust(14),
-                           self.match_number,
-                           self.new_execution_price,
-                           self.reason)
-
-    def decode(self, buf):
-        fields = struct.unpack(self._format, buf)
-        assert fields[0] == self._ouch_type
-        self.timestamp = fields[1]
-        self.order_token = fields[2].strip()
-        self.match_number = fields[3]
-        self.new_execution_price = fields[4]
-        self.reason = fields[5]
-        return
-
-
 class Rejected(OuchMessage):
     _format = '!c Q 14s L'
     _ouch_type = 'J'
@@ -567,113 +468,6 @@ class Rejected(OuchMessage):
         return
 
 
-class CancelPending(OuchMessage):
-    _format = '!cQ14s'
-    _ouch_type = 'P'
-
-    def __init__(self):
-        self.timestamp = 0
-        self.order_token = ''
-        return
-
-    def encode(self):
-        return struct.pack(self._format,
-                           self._ouch_type,
-                           self.timestamp,
-                           self.order_token.ljust(14))
-
-    def decode(self, buf):
-        fields = struct.unpack(self._format, buf)
-        assert fields[0] == self._ouch_type
-        self.timestamp = fields[1]
-        self.order_token = fields[2].strip()
-        return
-
-
-class CancelReject(OuchMessage):
-    _format = '!cQ14s'
-    _ouch_type = 'I'
-
-    def __init__(self):
-        self.timestamp = 0
-        self.order_token = ''
-        return
-
-    def encode(self):
-        return struct.pack(self._format,
-                           self._ouch_type,
-                           self.timestamp,
-                           self.order_token.ljust(14))
-
-    def decode(self, buf):
-        fields = struct.unpack(self._format, buf)
-        assert fields[0] == self._ouch_type
-        self.timestamp = fields[1]
-        self.order_token = fields[2].strip()
-        return
-
-
-class OrderPriorityUpdate(OuchMessage):
-    _format = 'cQ14sLcQ'
-    _ouch_type = 'T'
-
-    def __init__(self):
-        self.timestamp = 0
-        self.order_token = ''
-        self.price = 0
-        self.display = ''
-        self.order_reference_number = 0
-        return
-
-    def encode(self):
-        return struct.pack(self._format,
-                           self._ouch_type,
-                           self.timestamp,
-                           self.order_token.ljust(14),
-                           self.price,
-                           self.display,
-                           self.order_reference_number)
-
-    def decode(self, buf):
-        fields = struct.unpack(self._format, buf)
-        assert fields[0] == self._ouch_type
-        self.timestamp = fields[1]
-        self.order_token = fields[2].strip()
-        self.price = fields[3]
-        self.display = fields[4]
-        self.order_reference_number = fields[5]
-        return
-
-
-class OrderModified(OuchMessage):
-    _format = '!cQ14scL'
-    _ouch_type = 'M'
-
-    def __init__(self):
-        self.timestamp = 0
-        self.order_token = ''
-        self.buy_sell_indicator = ''
-        self.shares = 0
-        return
-
-    def encode(self):
-        return struct.pack(self._format,
-                           self._ouch_type,
-                           self.timestamp,
-                           self.order_token.ljust(14),
-                           self.buy_sell_indicator,
-                           self.shares)
-
-    def decode(self, buf):
-        fields = struct.unpack(self._format, buf)
-        assert fields[0] == self._ouch_type
-        self.timestamp = fields[1]
-        self.order_token = fields[2].strip()
-        self.buy_sell_indicator = fields[3]
-        self.shares = fields[4]
-        return
-
-
 UNSEQUENCED_MESSAGES = {
     "O": EnterOrder,
     "U": ReplaceOrder,
@@ -683,16 +477,9 @@ UNSEQUENCED_MESSAGES = {
 
 SEQUENCED_MESSAGES = {
     "A": Accepted,
-    "B": BrokenTrade,
     "C": Canceled,
-    "D": AIQCanceled,
     "E": Executed,
-    "I": CancelReject,
     "J": Rejected,
-    "K": PriceCorrection,
-    "M": OrderModified,
-    "P": CancelPending,
-    "T": OrderPriorityUpdate,
     "U": Replaced,
 }
 
