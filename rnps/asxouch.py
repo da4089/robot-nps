@@ -542,13 +542,13 @@ class PriceCorrection(OuchMessage):
 
 
 class Rejected(OuchMessage):
-    _format = '!cQ14sc'
+    _format = '!c Q 14s L'
     _ouch_type = 'J'
 
     def __init__(self):
         self.timestamp = 0
         self.order_token = ''
-        self.reason = ''
+        self.reject_code = 0
         return
 
     def encode(self):
@@ -556,14 +556,14 @@ class Rejected(OuchMessage):
                            self._ouch_type,
                            self.timestamp,
                            self.order_token.ljust(14),
-                           self.reason)
+                           self.reject_code)
 
     def decode(self, buf):
         fields = struct.unpack(self._format, buf)
         assert fields[0] == self._ouch_type
         self.timestamp = fields[1]
         self.order_token = fields[2].strip()
-        self.reason = fields[3]
+        self.reject_code = fields[3]
         return
 
 
