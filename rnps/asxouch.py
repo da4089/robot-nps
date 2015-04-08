@@ -239,7 +239,7 @@ class Accepted(OuchMessage):
         self.time_in_force = 0
         self.open_close = 0
         self.client_account = ''
-        self.order_slate = 0
+        self.order_state = 0
         self.customer_info = ''
         self.exchange_info = ''
         self.clearing_participant = ''
@@ -267,7 +267,7 @@ class Accepted(OuchMessage):
                            self.time_in_force,
                            self.open_close,
                            self.client_account,
-                           self.order_slate,
+                           self.order_state,
                            self.customer_info,
                            self.exchange_info,
                            self.clearing_participant,
@@ -311,27 +311,35 @@ class Accepted(OuchMessage):
         
 
 class Replaced(OuchMessage):
-    _format = '!cQ14scL8sLL4scQccLcc14sc'
+    _format = '!c Q 14s 14s L c Q Q L B B 10s B 15s 32s c L ' + \
+              'c c 4s 10s 20s 8s c Q'
     _ouch_type = 'U'
 
     def __init__(self):
         self.timestamp = 0
         self.replacement_order_token = ''
-        self.buy_sell_indicator = ''
-        self.shares = 0
-        self.stock = ''
+        self.previous_order_token = ''
+        self.order_book_id = 0
+        self.side = ''
+        self.order_id = 0
+        self.quantity = 0
         self.price = 0
         self.time_in_force = 0
-        self.firm = ''
-        self.display = ''
-        self.order_reference_number = 0
+        self.open_close = 0
+        self.client_account = ''
+        self.order_state = 0
+        self.customer_info = ''
+        self.exchange_info = ''
+        self.clearing_participant = ''
+        self.crossing_key = 0
         self.capacity = ''
-        self.intermarket_sweep_eligibility = ''
-        self.minimum_quantity = 0
-        self.cross_type = ''
-        self.order_state = ''
-        self.previous_order_token = ''
-        self.bbo_weight_indicator = ''
+        self.directed_wholesale = ''
+        self.execution_venue = ''
+        self.intermediary_id = ''
+        self.order_origin = ''
+        self.filler = ' ' * 8
+        self.order_type = ''
+        self.short_sell_quantity = 0
         return
 
     def encode(self):
@@ -339,42 +347,54 @@ class Replaced(OuchMessage):
                            self._ouch_type,
                            self.timestamp,
                            self.replacement_order_token.ljust(14),
-                           self.buy_sell_indicator,
-                           self.shares,
-                           self.stock.ljust(8),
+                           self.previous_order_token.ljust(14),
+                           self.order_book_id,
+                           self.side,
+                           self.order_id,
+                           self.quantity,
                            self.price,
                            self.time_in_force,
-                           self.firm.ljust(4),
-                           self.display,
-                           self.order_reference_number,
+                           self.open_close,
+                           self.customer_info.ljust(15),
+                           self.exchange_info.ljust(32),
+                           self.clearing_participant,
+                           self.crossing_key,
                            self.capacity,
-                           self.intermarket_sweep_eligibility,
-                           self.minimum_quantity,
-                           self.cross_type,
-                           self.order_state,
-                           self.previous_order_token.ljust(14),
-                           self.bbo_weight_indicator)
+                           self.directory_wholesale,
+                           self.execution_venue.ljust(4),
+                           self.intermediary_id.ljust(10),
+                           self.order_origin.ljust(20),
+                           self.filler.ljust(8),
+                           self.order_type,
+                           self.short_sell_quantity)
 
     def decode(self, buf):
         fields = struct.unpack(self._format, buf)
         assert fields[0] == self._ouch_type
         self.timestamp = fields[1]
         self.replacement_order_token = fields[2].strip()
-        self.buy_sell_indicator = fields[3]
-        self.shares = fields[4]
-        self.stock = fields[5].strip()
-        self.price = fields[6]
-        self.time_in_force = fields[7]
-        self.firm = fields[8].strip()
-        self.display = fields[9]
-        self.order_reference_number = fields[10]
-        self.capacity = fields[11]
-        self.intermarket_sweep_eligibility = fields[12]
-        self.minimum_quantity = fields[13]
-        self.cross_type = fields[14]
-        self.order_state = fields[15]
-        self.previous_order_token = fields[16].strip()
-        self.bbo_weight_indicator = fields[17]
+        self.previous_order_token = fields[3].strip()
+        self.order_book_id = fields[4]
+        self.side = fields[5]
+        self.order_id = fields[6]
+        self.quantity = fields[7]
+        self.price = fields[8]
+        self.time_in_force = fields[9]
+        self.open_close = fields[10]
+        self.client_account = fields[11].strip()
+        self.order_state = fields[12]
+        self.customer_info = fields[13].strip()
+        self.exchange_info = fields[14].strip()
+        self.clearing_participant = fields[15].strip()
+        self.crossing_key = fields[16]
+        self.capacity = fields[17]
+        self.directed_wholesale = fields[18]
+        self.execution_venue = fields[19].strip()
+        self.intermediary_id = fields[20].strip()
+        self.order_origin = fields[21].strip()
+        # filler
+        self.order_type = fields[23]
+        self.short_sell_quantity = fields[24]
         return
 
 
@@ -484,16 +504,15 @@ SEQUENCED_MESSAGES = {
 }
 
 INTEGER_FIELDS = [
-    "decrement_shares",
-    "executed_shares",
-    "execution_price",
-    "match_number",
-    "minimum_quantity",
-    "new_execution_price",
-    "order_reference_number",
+    "crossing_key",
+    "open_close",
+    "order_book_id",
+    "order_id",
+    "order_state"
     "price",
-    "quantity_prevented_from_trading",
-    "shares",
+    "quantity",
+    "reject_code",
+    "short_sell_quantity",
     "time_in_force",
     "timestamp",
 ]
