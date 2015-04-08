@@ -225,26 +225,33 @@ class CancelByOrderId(OuchMessage):
 
 
 class Accepted(OuchMessage):
-    _format = '!cQ14scL8sLL4scQccLccc'
+    _format = '!c Q 14s L c Q Q L B B 10s B 15s 32s c L c c 4s 10s 20s 8s c Q'
     _ouch_type = 'A'
 
     def __init__(self):
         self.timestamp = 0
         self.order_token = ''
-        self.buy_sell_indicator = ''
-        self.shares = 0
-        self.stock = ''
+        self.order_book_id = 0
+        self.side = ''
+        self.order_id = 0
+        self.quantity = 0
         self.price = 0
         self.time_in_force = 0
-        self.firm = ''
-        self.display = ''
-        self.order_reference_number = 0
+        self.open_close = 0
+        self.client_account = ''
+        self.order_slate = 0
+        self.customer_info = ''
+        self.exchange_info = ''
+        self.clearing_participant = ''
+        self.crossing_key = 0
         self.capacity = ''
-        self.intermarket_sweep_eligibility = ''
-        self.minimum_quantity = 0
-        self.cross_type = ''
-        self.order_state = ''
-        self.bbo_weight_indicator = ''
+        self.directed_wholesale = ''
+        self.execution_venue = ''
+        self.intermediary_id = ''
+        self.order_origin = ''
+        self.filler = '        '
+        self.order_type = ''
+        self.short_sell_quantity = 0
         return
 
     def encode(self):
@@ -252,40 +259,54 @@ class Accepted(OuchMessage):
                            self._ouch_type,
                            self.timestamp,
                            self.order_token.ljust(14),
-                           self.buy_sell_indicator,
-                           self.shares,
-                           self.stock.ljust(8),
+                           self.order_book_id,
+                           self.side,
+                           self.order_id,
+                           self.quantity,
                            self.price,
                            self.time_in_force,
-                           self.firm.ljust(4),
-                           self.display,
-                           self.order_reference_number,
+                           self.open_close,
+                           self.client_account,
+                           self.order_slate,
+                           self.customer_info,
+                           self.exchange_info,
+                           self.clearing_participant,
+                           self.crossing_key,
                            self.capacity,
-                           self.intermarket_sweep_eligibility,
-                           self.minimum_quantity,
-                           self.cross_type,
-                           self.order_state,
-                           self.bbo_weight_indicator)
+                           self.directed_wholesale,
+                           self.execution_venue,
+                           self.intermediary_id,
+                           self.order_origin,
+                           self.filler,
+                           self.order_type,
+                           self.short_sell_quantity)
 
     def decode(self, buf):
         fields = struct.unpack(self._format, buf)
         assert fields[0] == self._ouch_type
         self.timestamp = fields[1]
         self.order_token = fields[2].strip()
-        self.buy_sell_indicator = fields[3]
-        self.shares = fields[4]
-        self.stock = fields[5].strip()
-        self.price = fields[6]
-        self.time_in_force = fields[7]
-        self.firm = fields[8].strip()
-        self.display = fields[9]
-        self.order_reference_number = fields[10]
-        self.capacity = fields[11]
-        self.intermarket_sweep_eligibility = fields[12]
-        self.minimum_quantity = fields[13]
-        self.cross_type = fields[14]
-        self.order_state = fields[15]
-        self.bbo_weight_indicator = fields[16]
+        self.order_book_id = fields[3]
+        self.side = fields[4]
+        self.order_id = fields[5]
+        self.quantity = fields[6]
+        self.price = fields[7]
+        self.time_in_force = fields[8]
+        self.open_close = fields[9]
+        self.client_account = fields[10]
+        self.order_state = fields[11]
+        self.customer_info = fields[12]
+        self.exchange_info = fields[13]
+        self.clearing_participant = fields[14]
+        self.crossing_key = fields[15]
+        self.capacity = fields[16]
+        self.directed_wholesale = fields[17]
+        self.execution_venue = fields[18]
+        self.intermediary_id = fields[19].strip()
+        self.order_origin = fields[20].strip()
+        # filler (8 spaces)
+        self.order_type = fields[22]
+        self.short_sell_quantity = fields[23]
         return
         
 
