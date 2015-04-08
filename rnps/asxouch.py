@@ -434,37 +434,80 @@ class Canceled(OuchMessage):
 
 
 class Executed(OuchMessage):
-    _format = '!cQ14sLLcQ'
+    _format = '!c Q 14s L Q L 12B H'
     _ouch_type = 'E'
 
     def __init__(self):
         self.timestamp = 0
         self.order_token = ''
-        self.executed_shares = 0
-        self.execution_price = 0
-        self.liquidity_flag = ''
-        self.match_number = 0
+        self.order_book_id = 0
+        self.traded_quantity = 0
+        self.trade_price = 0
+        self.match_id = 0
+        self.deal_source = 0
         return
 
     def encode(self):
+        m =  chr((self.match_id >> 88) & 0xff)
+        m += chr((self.match_id >> 80) & 0xff)
+        m += chr((self.match_id >> 72) & 0xff)
+        m += chr((self.match_id >> 64) & 0xff)
+
+        m += chr((self.match_id >> 56) & 0xff)
+        m += chr((self.match_id >> 48) & 0xff)
+        m += chr((self.match_id >> 40) & 0xff)
+        m += chr((self.match_id >> 32) & 0xff)
+
+        m += chr((self.match_id >> 24) & 0xff)
+        m += chr((self.match_id >> 16) & 0xff)
+        m += chr((self.match_id >>  8) & 0xff)
+        m += chr((self.match_id >>  0) & 0xff)
+
         return struct.pack(self._format,
                            self._ouch_type,
                            self.timestamp,
                            self.order_token.ljust(14),
-                           self.executed_shares,
-                           self.execution_price,
-                           self.liquidity_flag,
-                           self.match_number)
+                           self.order_book_id,
+                           self.traded_quantity,
+                           self.trade_price,
+                           m,
+                           self.deal_source)
 
     def decode(self, buf):
         fields = struct.unpack(self._format, buf)
         assert fields[0] == self._ouch_type
         self.timestamp = fields[1]
         self.order_token = fields[2].strip()
-        self.executed_shares = fields[3]
-        self.execution_price = fields[4]
-        self.liquidity_flag = fields[5]
-        self.match_number = fields[6]
+        self.order_book_id = fields[3]
+        self.traded_quantity = fields[4]
+        self.trade_price = fields[5]
+        m = fields[6]
+        self.deal_source = fields[7]
+
+        match_id = 0
+        if True:
+            for i in range(12):
+                match_id |= ord(m[i])
+                if i < 11:
+                    match_id = match_id << 8
+        else:
+            match_id = 0
+            match_id |= ord(m[0]) << 88
+            match_id |= ord(m[1]) << 80
+            match_id |= ord(m[2]) << 72
+            match_id |= ord(m[3]) << 64
+
+            match_id |= ord(m[4]) << 56
+            match_id |= ord(m[5]) << 48
+            match_id |= ord(m[6]) << 40
+            match_id |= ord(m[7]) << 32
+
+            match_id |= ord(m[8]) << 24
+            match_id |= ord(m[9]) << 16
+            match_id |= ord(m[10]) << 8
+            match_id |= ord(m[11])
+
+        self.match_id = match_id
         return
     
 
@@ -511,16 +554,21 @@ SEQUENCED_MESSAGES = {
 
 INTEGER_FIELDS = [
     "crossing_key",
+    "deal_source",
+    "match_id",
     "open_close",
     "order_book_id",
     "order_id",
     "order_state"
     "price",
     "quantity",
+    "reason",
     "reject_code",
     "short_sell_quantity",
     "time_in_force",
     "timestamp",
+    "traded_quantity",
+    "trade_price",
 ]
 
 
