@@ -224,58 +224,6 @@ class CancelByOrderId(OuchMessage):
         return
 
 
-class ModifyOrder(OuchMessage):
-    _format = '!c14scL'
-    _ouch_type = 'M'
-
-    def __init__(self):
-        self.order_token = ''
-        self.buy_sell_indicator = ''
-        self.shares = 0
-        return
-
-    def encode(self):
-        return struct.pack(self._format,
-                           self._ouch_type,
-                           self.order_token.ljust(14),
-                           self.buy_sell_indicator,
-                           self.shares)
-
-    def decode(self, buf):
-        fields = struct.unpack(self._format, buf)
-        assert fields[0] == self._ouch_type
-        self.order_token = fields[1].strip()
-        self.buy_sell_indicator = fields[2]
-        self.shares = fields[3]
-        return
-
-
-class SystemEvent(OuchMessage):
-    _format = '!cQc'
-    _ouch_type = 'S'
-    
-    START_OF_DAY = 'S'
-    END_OF_DAY = 'E'
-
-    def __init__(self):
-        self.timestamp = 0
-        self.event_code = ''
-        return
-
-    def encode(self):
-        return struct.pack(self._format,
-                           self._ouch_type,
-                           self.timestamp,
-                           self.event_code)
-
-    def decode(self, buf):
-        fields = struct.unpack(self._format, buf)
-        assert fields[0] == self._ouch_type
-        self.timestamp = fields[1]
-        self.event_code = fields[2]
-        return
-
-        
 class Accepted(OuchMessage):
     _format = '!cQ14scL8sLL4scQccLccc'
     _ouch_type = 'A'
@@ -706,7 +654,6 @@ class OrderModified(OuchMessage):
 
 
 UNSEQUENCED_MESSAGES = {
-    "M": ModifyOrder,
     "O": EnterOrder,
     "U": ReplaceOrder,
     "X": CancelOrder,
@@ -724,7 +671,6 @@ SEQUENCED_MESSAGES = {
     "K": PriceCorrection,
     "M": OrderModified,
     "P": CancelPending,
-    "S": SystemEvent,
     "T": OrderPriorityUpdate,
     "U": Replaced,
 }
