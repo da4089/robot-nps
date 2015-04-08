@@ -179,25 +179,48 @@ class ReplaceOrder(OuchMessage):
 
 
 class CancelOrder(OuchMessage):
-    _format = '!c14sL'
+    _format = '!c 14s'
     _ouch_type = 'X'
 
     def __init__(self):
         self.order_token = ''
-        self.shares = 0
         return
 
     def encode(self):
         return struct.pack(self._format,
                            self._ouch_type,
-                           self.order_token.ljust(14),
-                           self.shares)
+                           self.order_token.ljust(14))
 
     def decode(self, buf):
         fields = struct.unpack(self._format, buf)
         assert fields[0] == self._ouch_type
         self.order_token = fields[1].strip()
-        self.shares = fields[2]
+        return
+
+
+class CancelByOrderId(OuchMessage):
+    _format = '!c L c Q'
+    _ouch_type = 'Y'
+
+    def __init__(self):
+        self.order_book_id = 0
+        self.side = ''
+        self.order_id = 0
+        return
+
+    def encode(self):
+        return struct.pack(self._format,
+                           self._ouch_type,
+                           self.order_book_id,
+                           self.side,
+                           self.order_id)
+
+    def decode(self, buf):
+        fields = struct.unpack(self._format, buf)
+        assert fields[0] == self._ouch_type
+        self.order_book_id = int(fields[1])
+        self.side = fields[2]
+        self.order_id = int(fields[3])
         return
 
 
@@ -687,6 +710,7 @@ UNSEQUENCED_MESSAGES = {
     "O": EnterOrder,
     "U": ReplaceOrder,
     "X": CancelOrder,
+    "Y": CancelByOrderId,
 }
 
 SEQUENCED_MESSAGES = {
