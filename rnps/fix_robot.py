@@ -19,6 +19,7 @@
 ########################################################################
 
 from base import *
+from fix import FixParser
 
 # Module-local logger.
 logger = logging.getLogger(__name__)
@@ -28,8 +29,9 @@ logger = logging.getLogger(__name__)
 
 class FixServerSession(BaseServerSession):
     def __init__(self, factory, address):
-        super(FixServerSession, self).__init__(factory, address)
+        BaseServerSession.__init__(self, factory, address)
         self.set_protocol("FIX")
+        self.parser = FixParser()
         return
 
     def dataReceived(self, data):
@@ -37,36 +39,28 @@ class FixServerSession(BaseServerSession):
 
         Override of Twisted method from base class."""
 
-        self.receive_buffer += data
+        self.parser.append_buffer(data)
 
-        while len(self.receive_buffer) > 0:
-            if not soupbin.has_complete_message(self.receive_buffer):
-                return
-
-            msg, self.receive_buffer = soupbin.get_message(self.receive_buffer)
-            soup_type = msg.get_type()
-
-            if soup_type == 'R' and self.factory.auto_receive_heartbeats:
-                logger.info("OUCH: Server session [%s]: consumed heartbeat",
+        msg = self.parser.get_message()
+        while msg:
+            if msg.message_type == '0' and self.factory.auto_receive_heartbeats:
+                logger.info("FIX: Session [%s]: consumed heartbeat",
                             self.factory.name)
                 return
 
-            if soup_type == 'S' or soup_type == 'U':
-                logger.debug("server session got soup_type [%s], "
-                             "length %u, ouch_type [%s]",
-                             soup_type, len(msg.message), msg.message[0:1])
-
-                msg._payload = ouch4.get_message(soup_type, msg.message)
-
             self.received_messages.append(msg)
-            logger.info("%s: server queuing %s", self.factory.name, soup_type)
+            logger.info("%s: server queuing 35=%s",
+                        self.factory.name,
+                        msg.message_type)
+
+            msg = self.parser.get_message()
 
         return
 
 
 class FixServerFactory(BaseServerFactory):
     def __init__(self, robot, name, port, version):
-        super(FixServerFactory, self).__init__(robot, name, port, version)
+        BaseServerFactory.__init__(self, robot, name, port, version)
         self.set_protocol("FIX", FixServerSession)
         return
 
@@ -74,7 +68,8 @@ class FixServerFactory(BaseServerFactory):
 class FixClient(BaseClient):
     def __init__(self, factory, address):
         self.set_protocol("FIX")
-        super (FixClient, self).__init__(factory, address)
+        BaseClient.__init__(self, factory, address)
+        self.parser = FixParser()
         return
 
     def dataReceived(self, data):
@@ -82,31 +77,19 @@ class FixClient(BaseClient):
 
         Override of Twisted method from base class."""
 
-        self.receive_buffer += data
+        self.parser.append_buffer(data)
+        msg = self.parser.get_message()
+        while msg:
 
-        while len(self.receive_buffer) > 0:
-            if not soupbin.has_complete_message(self.receive_buffer):
-                return
-
-            msg, self.receive_buffer = soupbin.get_message(self.receive_buffer)
-            if not msg:
-                return
-            soup_type = msg.get_type()
-
-            if soup_type == 'H' and self.factory.auto_receive_heartbeats:
-                logger.info("OUCH: Session [%s]: consumed heartbeat",
+            if msg.message_type == '0' and self.factory.auto_receive_heartbeats:
+                logger.info("FIX: Session [%s]: consumed heartbeat",
                             self.factory.name)
                 return
 
-            if soup_type == 'S' or soup_type == 'U':
-                logger.debug("client got soup_type [%s], "
-                             "length %u, ouch_type [%s]",
-                             soup_type, len(msg.message), msg.message[0:1])
-
-                msg._payload = ouch4.get_message(soup_type, msg.message)
-
             self.received_messages.append(msg)
-            logger.info("%s: client queuing %s", self.factory.name, soup_type)
+            logger.info("%s: client queuing 35=%s",
+                        self.factory.name,
+                        msg.message_type)
 
         return
 
@@ -115,9 +98,9 @@ class FixClientFactory(BaseClientFactory):
     def __init__(self, robot, name,
                  server_host, server_port,
                  protocol_version, client_port):
-        super(FixClientFactory, self).__init__(robot, name,
-                                               server_host, server_port,
-                                               protocol_version, client_port)
+        BaseClientFactory.__init__(self, robot, name,
+                                   server_host, server_port,
+                                   protocol_version, client_port)
         self.set_protocol("FIX", FixClient)
         return
 
