@@ -1,7 +1,7 @@
 ########################################################################
 # robot-nps, Network Protocol Simulator for Robot Framework
 #
-# Copyright (C) 2014 David Arnold
+# Copyright (C) 2015 David Arnold
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,19 +19,32 @@
 ########################################################################
 
 import unittest
-
-from test_fix import FixTests
-from test_soupbin import SoupBinTests
-from test_soup import SoupTests
+from rnps import fix
 
 
-suite = unittest.TestSuite()
-suite.addTests(unittest.makeSuite(FixTests))
-suite.addTests(unittest.makeSuite(SoupBinTests))
-suite.addTests(unittest.makeSuite(SoupTests))
+class FixTests(unittest.TestCase):
 
+    def setUp(self):
+        pass
 
-if __name__ == "__main__":
-    runner = unittest.TextTestRunner()
-    runner.run(suite)
+    def tearDown(self):
+        pass
+
+    def test_basic_fix_message(self):
+        pkt = fix.FixMessage(4, 2)
+        pkt.set_message_type('D')
+        buf = pkt.to_buf()
+
+        fix.print_fix(buf)
+
+        p = fix.FixParser()
+        p.append_buffer(buf)
+        m = p.get_message()
+
+        print pkt.pairs
+        print m.pairs
+
+        self.assertIsNotNone(m)
+        self.assertEqual(pkt, m)
+        return
 
