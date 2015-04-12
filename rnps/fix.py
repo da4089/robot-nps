@@ -39,6 +39,12 @@ import errors
 # FIX field delimiter character.
 SOH = '\001'
 
+
+def print_fix(s):
+    cooked = s.replace('\x01', '|')
+    print cooked
+
+
 class FixParser(object):
 
     def __init__(self):
@@ -46,7 +52,7 @@ class FixParser(object):
         self.pairs = []
         return
 
-    def append_buf(self, buf):
+    def append_buffer(self, buf):
         self.buf += buf
         return
 
@@ -54,7 +60,7 @@ class FixParser(object):
         # Break buffer into tag=value pairs.
         pairs = self.buf.split(SOH)
         if len(pairs) > 0:
-            self.pairs.append(pairs[:-1])
+            self.pairs.extend(pairs[:-1])
             if pairs[-1] == '':
                 self.buf = ''
             else:
@@ -64,7 +70,7 @@ class FixParser(object):
             return None
 
         # Check first pair is FIX BeginString.
-        while self.pairs[0][:6] != "8=FIX.":
+        while self.pairs and self.pairs[0][:6] != "8=FIX.":
             # Discard pairs until we find the beginning of a message.
             self.pairs.pop(0)
 
@@ -80,10 +86,10 @@ class FixParser(object):
             return None
 
         # Found checksum, so we have a complete message.
-        major = int(pairs[0][6])
-        minor = int(pairs[0][8])
+        major = int(self.pairs[0][6])
+        minor = int(self.pairs[0][8])
         m = FixMessage(major, minor)
-        m.append_pairs(self.pairs[:index + 1])
+        m.append_strings(self.pairs[:index + 1])
         
         self.pairs = self.pairs[index:]
         
@@ -91,8 +97,24 @@ class FixParser(object):
 
 
 class FixMessage(object):
+    """FIX protocol message.
+
+    FIX messages consist of an ordered list of tag=value pairs.  Tags
+    are numbers, represented on the wire as strings.  Values may have
+    various types, again all presented as strings on the wire.
+
+    This class stores a FIX message: it does not perform any validation
+    of the content of tags or values, nor the presence of tags required
+    for compliance with a specific FIX protocol version."""
 
     def __init__(self, major, minor):
+        """Initialise a FIX message.
+
+        :param major: Major FIX version number (4 or 5).
+        :param minor: Minor FIX version number.
+
+        Create a FIX message, and set the FIX version number."""
+
         self.major = major
         self.minor = minor
 
@@ -103,33 +125,110 @@ class FixMessage(object):
         return
 
     def set_message_type(self, message_type):
+        """Set FIX message type.
+
+        :param message_type: FIX message type code.
+
+        All messages should have their message type set with this
+        function, or by setting a 35=x field, unless testing a scenario
+        where the message type is unset."""
+
         self.message_type = message_type
         return
 
     def set_body_length(self, body_length):
-        self.body_length = 0
+        """Override calculated body length.
+
+        :param body_length: Body length in bytes.
+
+        This function is useful for testing scenarios requiring an
+        incorrect body length in a message."""
+
+        self.body_length = body_length
         return
 
     def set_checksum(self, checksum):
+        """Override calculated checksum value.
+
+        :param checksum: Integer checksum value.
+
+        This function is useful for testing scenarios requiring an
+        invalid checksum in a message."""
+
         self.checksum = checksum
         return
 
     def append_pair(self, tag, value):
-        self.pairs.append(tuple(str(tag), str(value)))
+        """Append a tag=value pair to this message.
+
+        :param tag: Integer or string FIX tag number.
+        :param value: FIX tag value.
+
+        Both parameters are explicitly converted to strings before
+        storage, so it's ok to pass integers if that's easier for
+        your program logic."""
+
+        if int(tag) == 8:
+            # FIXME: set version?
+            return
+
+        if int(tag) == 9:
+            # Ignore body length.
+            return
+
+        if int(tag) == 10:
+            # Ignore checksum.
+            return
+
+        if int(tag) == 35:
+            # Promote 35=x to attribute.
+            self.message_type = value
+            return
+
+        self.pairs.append((str(tag), str(value)))
+        return
+
+    def append_string(self, field):
+        """Append a tag=value pair in string format.
+
+        :param field: String "tag=value" to be appended to this message.
+
+        The string is split at the first '=' character, and the resulting
+        tag and value strings are appended to the message."""
+
+        # Split into tag and value.
+        l = field.split('=', 1)
+        if len(l) != 2:
+            raise ValueError("Field missing '=' separator.")
+
+        # Check tag is an integer.
+        try:
+            tag_int = int(l[0])
+        except ValueError:
+            raise ValueError("Tag value must be an integer")
+
+        # Save.
+        self.append_pair(tag_int, l[1])
         return
 
     def append_strings(self, string_list):
+        """Append tag=pairs for each supplied string.
+
+        :param string_list: List of "tag=value" strings.
+
+        Each string is split, and the resulting tag and value strings
+        are appended to the message."""
+
         for s in string_list:
-            l = s.split('=', 1)
-            if len(l) != 2:
-                continue
-            self.pairs.append(tuple(str(l[0]), str(l[1])))
+            self.append_string(s)
         return
 
     def to_buf(self):
+        """Convert message to on-the-wire FIX format."""
+
         # Walk pairs, creating string.
         s = ''
-        for tag, value in pairs:
+        for tag, value in self.pairs:
             s += '%s=%s' % (tag, value)
             s += SOH
 
@@ -145,17 +244,52 @@ class FixMessage(object):
         else:
             body_length = len(s)
             
-        s = \
-          "8=FIX.%u.%u" % (self.major, self.minor) + SOH + \
-          "9=%u" % body_length + SOH 
+        s = "8=FIX.%u.%u" % (self.major, self.minor) + SOH + \
+            "9=%u" % body_length + SOH + \
+            s
 
-        # Calculate and append checksum
+        # Calculate and append the checksum.
         checksum = 0
         for c in s:
-            checksum += c
+            checksum += ord(c)
         s += "10=%03u" % (checksum % 256,) + SOH
 
         return s
 
+    def __eq__(self, other):
+        """Compare with another FixMessage.
+
+        :param other: Message to compare.
+
+        Compares the tag=value pairs, message_type and FIX version
+        of this message against the `other`."""
+
+        # Compare message versions.
+        if self.major != other.major or self.minor != other.minor:
+            return False
+
+        # Compare message types.
+        if self.message_type != other.message_type:
+            return False
+
+        # Check pairs list lengths.
+        if len(self.pairs) != len(other.pairs):
+            return False
+
+        # Clone our pairs list.
+        tmp = []
+        for pair in self.pairs:
+            tmp.append((pair[0], pair[1]))
+
+        for pair in other.pairs:
+            try:
+                tmp.remove(pair)
+            except ValueError:
+                return False
+
+        if len(tmp) > 0:
+            return False
+
+        return True
 
 ########################################################################
