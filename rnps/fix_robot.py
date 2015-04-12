@@ -19,7 +19,7 @@
 ########################################################################
 
 from base import *
-from fix import FixParser
+from fix import FixMessage, FixParser
 
 # Module-local logger.
 logger = logging.getLogger(__name__)
@@ -144,11 +144,7 @@ class FixRobot(BaseRobot):
         if name in self.messages:
             raise errors.DuplicateMessageError(name)
 
-        constructor = soupbin.Messages.get(soup_type)
-        if not constructor:
-            raise errors.BadMessageTypeError(soup_type)
-
-        self.messages[name] = constructor()
+        self.messages[name] = FixMessage()
         return
 
     def destroy_message(self, name):
@@ -163,6 +159,7 @@ class FixRobot(BaseRobot):
         if not msg:
             raise errors.NoSuchMessageError(message_name)
 
+        msg.append_pair(tag, str(value))
         return
 
     def set_float_field(self, message_name, tag, value):
@@ -170,6 +167,7 @@ class FixRobot(BaseRobot):
         if not msg:
             raise errors.NoSuchMessageError(message_name)
 
+        msg.append_pair(tag, str(value))
         return
 
     def set_boolean_field(self, message_name, tag, value):
@@ -177,6 +175,7 @@ class FixRobot(BaseRobot):
         if not msg:
             raise errors.NoSuchMessageError(message_name)
 
+        msg.append_pair(tag, 'Y' if value else 'N')
         return
 
     def set_string_field(self, message_name, tag, value):
@@ -184,6 +183,7 @@ class FixRobot(BaseRobot):
         if not msg:
             raise errors.NoSuchMessageError(message_name)
 
+        msg.append_pair(tag, value)
         return
 
     def set_timestamp_field(self, message_name, tag, value):
@@ -191,6 +191,8 @@ class FixRobot(BaseRobot):
         if not msg:
             raise errors.NoSuchMessageError(message_name)
 
+        # FIXME: probably need a lot better support here?
+        msg.append_pair(tag, str(value))
         return
 
     def set_time_field(self, message_name, tag, value):
@@ -198,6 +200,8 @@ class FixRobot(BaseRobot):
         if not msg:
             raise errors.NoSuchMessageError(message_name)
 
+        # FIXME: probably need a lot better support here?
+        msg.append_pair(tag, str(value))
         return
 
     def set_date_field(self, message_name, tag, value):
@@ -205,19 +209,23 @@ class FixRobot(BaseRobot):
         if not msg:
             raise errors.NoSuchMessageError(message_name)
 
+        # FIXME: probably need a lot better support here?
+        msg.append_pair(tag, str(value))
         return
     
     def get_field(self, message_name, tag):
         """Get field value from this message."""
 
+        # FIXME: needs some work to support repeating groups?
         msg = self.messages.get(message_name)
         if not msg:
             raise errors.NoSuchMessageError(message_name)
 
-        if not msg.has_payload():
-            raise errors.NotAnOuchMessageError(message_name)
+        value = msg.get(tag)
+        if not value:
+            raise errors.BadFieldNameError(tag)
 
-        return msg.get_payload().get_field(field_name)
+        return value
 
 
 ########################################################################
