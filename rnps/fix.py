@@ -223,6 +223,22 @@ class FixMessage(object):
             self.append_string(s)
         return
 
+    def get(self, tag):
+        """Return first value for tag.
+
+        :param tag: FIX field tag number
+        :return: None if nothing found, otherwise value matching tag.
+
+        Note that for repeating groups, this function will only ever
+        return the value of the first instance of 'tag' found in the
+        message."""
+
+        for t, v in self.pairs:
+            if t == tag:
+                return v
+
+        return None
+
     def to_buf(self):
         """Convert message to on-the-wire FIX format."""
 
