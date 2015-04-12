@@ -1,0 +1,103 @@
+#! /usr/bin/env python
+########################################################################
+# robot-nps, Network Protocol Simulator for Robot Framework
+#
+# Copyright (C) 2014 David Arnold
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+import argparse
+import logging
+import rnps
+
+from twistedremoteserver import TwistedRemoteServer
+from twisted.internet import reactor
+from twisted.web.resource import Resource
+from twisted.web.server import Site
+
+
+########################################################################
+
+if __name__ == "__main__":
+    # Logging
+    root = logging.getLogger()
+    root.setLevel(logging.DEBUG)
+
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.DEBUG)
+
+    fmt = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    ch.setFormatter(fmt)
+    root.addHandler(ch)
+
+    logging.getLogger().debug("Logging initialised.")
+
+
+    parser = argparse.ArgumentParser(description="A Robot Framework remote "
+                                                 "server that provides both "
+                                                 "client and server-side "
+                                                 "simulation of the OUCH4 "
+                                                 "protocol.")
+    parser.add_argument("-p", "--port",
+                        nargs=1,
+                        type=int,
+                        help="TCP port number for remote Robot Framework "
+                             "access.",
+                        default=0)
+    parser.add_argument("-i", "--interface",
+                        nargs=1,
+                        type=str,
+                        help="IP address of listening interface.  Default is "
+                             "%(default)s.",
+                        default="0.0.0.0")
+    parser.add_argument("-f", "--file",
+                        nargs=1,
+                        type=str,
+                        help="Name of file to write listening port to.",
+                        default=None)
+    args = parser.parse_args()
+    interface = args.interface
+
+    if type(args.port) == type([]):
+        port = args.port[0]
+    else:
+        port = args.port
+
+    if type(args.file) == type([]):
+        port_file = args.file[0]
+    else:
+        port_file = args.file
+
+    ouch_robot = rnps.OuchRobot()
+    robot_api = TwistedRemoteServer(ouch_robot, interface, port)
+
+    root = Resource()
+    root.putChild("RPC2", robot_api)
+    factory = Site(root)
+    listener = reactor.listenTCP(port, factory, interface=interface)
+    if port_file:
+        f = open(port_file, "w")
+        f.write("%u\n" % listener.getHost().port)
+        f.close()
+
+    logging.getLogger().info("Listening on %s:%u",
+                             interface,
+                             listener.getHost().port)
+    reactor.run()
+
+
+
+########################################################################
