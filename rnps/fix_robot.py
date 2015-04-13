@@ -18,6 +18,7 @@
 #
 ########################################################################
 
+import errors
 import logging
 
 from base import BaseClientFactory, BaseClient, BaseRobot,\
