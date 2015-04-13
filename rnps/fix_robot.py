@@ -18,7 +18,10 @@
 #
 ########################################################################
 
-from base import *
+import logging
+
+from base import BaseClientFactory, BaseClient, BaseRobot,\
+    BaseServerFactory, BaseServerSession
 from fix import FixMessage, FixParser
 
 # Module-local logger.
