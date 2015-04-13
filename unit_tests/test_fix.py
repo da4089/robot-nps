@@ -31,7 +31,8 @@ class FixTests(unittest.TestCase):
         pass
 
     def test_basic_fix_message(self):
-        pkt = fix.FixMessage(4, 2)
+        pkt = fix.FixMessage()
+        pkt.set_version(4, 2)
         pkt.set_message_type('D')
         buf = pkt.to_buf()
 
