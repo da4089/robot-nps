@@ -86,11 +86,8 @@ class FixParser(object):
             return None
 
         # Found checksum, so we have a complete message.
-        major = int(self.pairs[0][6])
-        minor = int(self.pairs[0][8])
-        m = FixMessage(major, minor)
+        m = FixMessage()
         m.append_strings(self.pairs[:index + 1])
-        
         self.pairs = self.pairs[index:]
         
         return m
@@ -107,21 +104,25 @@ class FixMessage(object):
     of the content of tags or values, nor the presence of tags required
     for compliance with a specific FIX protocol version."""
 
-    def __init__(self, major, minor):
-        """Initialise a FIX message.
+    def __init__(self):
+        """Initialise a FIX message."""
 
-        :param major: Major FIX version number (4 or 5).
-        :param minor: Minor FIX version number.
-
-        Create a FIX message, and set the FIX version number."""
-
-        self.major = major
-        self.minor = minor
-
+        self.major = 0
+        self.minor = 0
         self.message_type = 0
         self.body_length = 0
         self.checksum = 0
         self.pairs = []
+        return
+
+    def set_version(self, major, minor):
+        """Set FIX protocol version.
+
+        :param major: Major FIX version number (4 or 5).
+        :param minor: Minor FIX version number."""
+
+        self.major = int(major)
+        self.minor = int(minor)
         return
 
     def set_message_type(self, message_type):
@@ -169,7 +170,10 @@ class FixMessage(object):
         your program logic."""
 
         if int(tag) == 8:
-            # FIXME: set version?
+            v = str(value)
+            if len(v) < len("FIX.x.y"):
+                raise ValueError("Bad version: %s" % v)
+            self.set_version(int(v[4]), int(v[6]))
             return
 
         if int(tag) == 9:
