@@ -34,18 +34,22 @@ class FixTests(unittest.TestCase):
         pkt = fix.FixMessage()
         pkt.set_version(4, 2)
         pkt.set_message_type('D')
+        pkt.append_pair(29, "A")
         buf = pkt.to_buf()
-
-        fix.print_fix(buf)
 
         p = fix.FixParser()
         p.append_buffer(buf)
         m = p.get_message()
 
-        print pkt.pairs
-        print m.pairs
-
         self.assertIsNotNone(m)
         self.assertEqual(pkt, m)
         return
+
+
+suite = unittest.TestSuite()
+suite.addTests(unittest.makeSuite(FixTests))
+
+if __name__ == "__main__":
+    runner = unittest.TextTestRunner()
+    runner.run(suite)
 
