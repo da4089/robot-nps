@@ -1,7 +1,7 @@
 ########################################################################
 # robot-nps, Network Protocol Simulator for Robot Framework
 #
-# Copyright (C) 2014 David Arnold
+# Copyright (C) 2015 David Arnold
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
 #
 ########################################################################
 
-# Implements ASX OUCH as at 2015/02/25.
+# Implements ASX OUCH SR8 as at 2015/04/25.
 #
 # ASX OUCH is implemented by NASDAQ OMX's Genium INET platform, as
 # deployed for ASX.  It's based on NASDAQ's OUCH4, but has a bunch of
@@ -27,6 +27,7 @@
 # Source documents:
 # - ASX Trade OUCH v1.0 (document #036435).
 # - ASX OUCH Message Specification, v2.0, 2 September 2013.
+# - ASX Trade OUCH Specification, Q2 2015 Release - SR8, 18 March 2015.
 # - ASX Trade Q2 2015 Release (SR8) Appendices to ASX Notice.
 
 ########################################################################
@@ -40,7 +41,7 @@ from ouch4 import get_message, OuchMessage
 ########################################################################
 
 class EnterOrder(OuchMessage):
-    _format = '!c 14s L c Q L B B 10s 15s 32s c L c c 4s 10s 20s 8s c Q'
+    _format = '!c 14s L c Q L B B 10s 15s 32s c L c c 4s 10s 20s 8s c Q Q'
     _ouch_type = 'O'
 
     def __init__(self):
@@ -64,6 +65,7 @@ class EnterOrder(OuchMessage):
         self.filler = '        '
         self.order_type = ''
         self.short_sell_quantity = 0
+        self.minimum_acceptable_quantity = 0
         return
 
     def encode(self):
@@ -88,7 +90,8 @@ class EnterOrder(OuchMessage):
                            self.order_origin,
                            self.filler,
                            self.order_type,
-                           self.short_sell_quantity)
+                           self.short_sell_quantity,
+                           self.minimum_acceptable_quantity)
 
     def decode(self, buf):
         fields = struct.unpack(self._format, buf)
@@ -113,11 +116,12 @@ class EnterOrder(OuchMessage):
         # filler (8 spaces)
         self.order_type = fields[19]
         self.short_sell_quantity = int(fields[20])
+        self.minimum_acceptable_quantity = int(fields[21])
         return
 
 
 class ReplaceOrder(OuchMessage):
-    _format = '!c 14s 14s Q L B 10s 15s 32s c c 4s 10s 20s 8s Q'
+    _format = '!c 14s 14s Q L B 10s 15s 32s c c 4s 10s 20s 8s Q Q'
     _ouch_type = 'U'
 
     def __init__(self):
@@ -136,6 +140,7 @@ class ReplaceOrder(OuchMessage):
         self.order_origin = ''
         self.filler = '        '
         self.short_sell_quantity = 0
+        self.minimum_acceptable_quantity = 0
         return
 
     def encode(self):
@@ -155,7 +160,8 @@ class ReplaceOrder(OuchMessage):
                            self.intermediary_id,
                            self.order_origin,
                            self.filler,
-                           self.short_sell_quantity)
+                           self.short_sell_quantity,
+                           self.minimum_acceptable_quantity)
 
     def decode(self, buf):
         fields = struct.unpack(self._format, buf)
@@ -175,6 +181,7 @@ class ReplaceOrder(OuchMessage):
         self.order_origin = fields[13]
         # filler
         self.short_sell_quantity = int(fields[15])
+        self.minimum_acceptable_quantity = int(fields[16])
         return
 
 
@@ -252,6 +259,7 @@ class Accepted(OuchMessage):
         self.filler = '        '
         self.order_type = ''
         self.short_sell_quantity = 0
+        self.minimum_acceptable_quantity = 0
         return
 
     def encode(self):
@@ -279,7 +287,8 @@ class Accepted(OuchMessage):
                            self.order_origin,
                            self.filler,
                            self.order_type,
-                           self.short_sell_quantity)
+                           self.short_sell_quantity,
+                           self.minimum_acceptable_quantity)
 
     def decode(self, buf):
         fields = struct.unpack(self._format, buf)
@@ -307,12 +316,13 @@ class Accepted(OuchMessage):
         # filler (8 spaces)
         self.order_type = fields[22]
         self.short_sell_quantity = fields[23]
+        self.minimum_acceptable_quantity = fields[24]
         return
         
 
 class Replaced(OuchMessage):
     _format = '!c Q 14s 14s L c Q Q L B B 10s B 15s 32s c L ' + \
-              'c c 4s 10s 20s 8s c Q'
+              'c c 4s 10s 20s 8s c Q Q'
     _ouch_type = 'U'
 
     def __init__(self):
@@ -340,6 +350,7 @@ class Replaced(OuchMessage):
         self.filler = ' ' * 8
         self.order_type = ''
         self.short_sell_quantity = 0
+        self.minimum_acceptable_quantity = 0
         return
 
     def encode(self):
@@ -360,13 +371,14 @@ class Replaced(OuchMessage):
                            self.clearing_participant,
                            self.crossing_key,
                            self.capacity,
-                           self.directory_wholesale,
+                           self.directed_wholesale,
                            self.execution_venue.ljust(4),
                            self.intermediary_id.ljust(10),
                            self.order_origin.ljust(20),
                            self.filler.ljust(8),
                            self.order_type,
-                           self.short_sell_quantity)
+                           self.short_sell_quantity,
+                           self.minimum_acceptable_quantity)
 
     def decode(self, buf):
         fields = struct.unpack(self._format, buf)
@@ -395,6 +407,7 @@ class Replaced(OuchMessage):
         # filler
         self.order_type = fields[23]
         self.short_sell_quantity = fields[24]
+        self.minimum_acceptable_quantity = fields[25]
         return
 
 
@@ -434,7 +447,7 @@ class Canceled(OuchMessage):
 
 
 class Executed(OuchMessage):
-    _format = '!c Q 14s L Q L 12B H'
+    _format = '!c Q 14s L Q L 12B H B'
     _ouch_type = 'E'
 
     def __init__(self):
@@ -445,6 +458,7 @@ class Executed(OuchMessage):
         self.trade_price = 0
         self.match_id = 0
         self.deal_source = 0
+        self.match_attributes = 0
         return
 
     def encode(self):
@@ -471,7 +485,8 @@ class Executed(OuchMessage):
                            self.traded_quantity,
                            self.trade_price,
                            m,
-                           self.deal_source)
+                           self.deal_source,
+                           self.match_attributes)
 
     def decode(self, buf):
         fields = struct.unpack(self._format, buf)
@@ -483,6 +498,7 @@ class Executed(OuchMessage):
         self.trade_price = fields[5]
         m = fields[6]
         self.deal_source = fields[7]
+        self.match_attributes = fields[8]
 
         match_id = 0
         if True:
@@ -555,7 +571,9 @@ SEQUENCED_MESSAGES = {
 INTEGER_FIELDS = [
     "crossing_key",
     "deal_source",
+    "match_attributes",
     "match_id",
+    "minimum_acceptable_quantity",
     "open_close",
     "order_book_id",
     "order_id",
