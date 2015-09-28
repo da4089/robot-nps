@@ -227,19 +227,23 @@ class FixMessage(object):
             self.append_string(s)
         return
 
-    def get(self, tag):
-        """Return first value for tag.
+    def get(self, tag, nth=1):
+        """Return n-th value for tag.
 
         :param tag: FIX field tag number
+        :param nth: Index of tag if repeating
         :return: None if nothing found, otherwise value matching tag.
 
-        Note that for repeating groups, this function will only ever
-        return the value of the first instance of 'tag' found in the
-        message."""
+        Defaults to returning the first matching value of 'tag', but if
+        the 'nth' parameter is overridden, can get repeated fields."""
+
+        str_tag = str(tag)
 
         for t, v in self.pairs:
-            if t == tag:
-                return v
+            if t == str_tag:
+                nth -= 1
+                if nth == 0:
+                    return v
 
         return None
 
@@ -311,5 +315,6 @@ class FixMessage(object):
             return False
 
         return True
+
 
 ########################################################################
