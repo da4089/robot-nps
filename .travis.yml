@@ -12,13 +12,13 @@ script:
  - env PYTHONPATH=. python ./rnps-ouch -f port &
  - while test ! -f port; do sleep 1; done
  - cd robot_tests/ouch
- - pybot -v OUCH_PORT:`cat ../port` *.robot
+ - pybot -v OUCH_PORT:`cat ../../port` *.robot
  - cd ../..
  - rm -f port
  - env PYTHONPATH=. python ./rnps-fix -f port &
  - while test ! -f port; do sleep 1; done
  - cd robot_tests/fix
- - pybot -v FIX_PORT:`cat ../port` *.robot
+ - pybot -v FIX_PORT:`cat ../../port` *.robot
  - cd ../..
  - rm -f port
  - cd docs
