@@ -45,6 +45,19 @@ class FixTests(unittest.TestCase):
         self.assertEqual(pkt, m)
         return
 
+    def test_get(self):
+        pkt = fix.FixMessage()
+        pkt.append_pair(42, "a")
+        pkt.append_pair(42, "b")
+        pkt.append_pair(42, "c")
+
+        self.assertEqual("a", pkt.get(42))
+        self.assertEqual("b", pkt.get(42, 2))
+        self.assertEqual("c", pkt.get(42, 3))
+        self.assertEqual("a", pkt.get(42, 1))
+        self.assertIsNone(pkt.get(42, 4))
+        return
+
 
 suite = unittest.TestSuite()
 suite.addTests(unittest.makeSuite(FixTests))
