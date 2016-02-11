@@ -41,7 +41,7 @@ SOH = '\001'
 
 
 def print_fix(s):
-    cooked = s.replace('\x01', '|')
+    cooked = s.replace(SOH, '|')
     print cooked
 
 
@@ -107,22 +107,41 @@ class FixMessage(object):
     def __init__(self):
         """Initialise a FIX message."""
 
+        self.begin_string = ""
         self.major = 0
         self.minor = 0
         self.message_type = 0
         self.body_length = 0
         self.checksum = 0
+
+        self.raw = False
+
         self.pairs = []
         return
 
-    def set_version(self, major, minor):
+    def set_raw(self):
+        """Set this message into raw mode.
+
+        In raw mode, only set_session_version() and the append functions
+        are used to control the contents of the message.  No fields are
+        added automatically (eg. Body Length, Checksum, etc), and
+        fields are ordered strictly in the order supplied.
+
+        Normally, raw mode is False, and Begin String (8), Body Length (9),
+        Message Type (35) and Checksum (10) are handled specially.
+
+        Raw mode is useful for testing low-level errors in a FIX
+        message stream."""
+
+        self.raw = True
+        return
+
+    def set_session_version(self, begin_string):
         """Set FIX protocol version.
 
-        :param major: Major FIX version number (4 or 5).
-        :param minor: Minor FIX version number."""
+        :param begin_string: Value of tag 8."""
 
-        self.major = int(major)
-        self.minor = int(minor)
+        self.begin_string = begin_string
         return
 
     def set_message_type(self, message_type):
@@ -134,7 +153,7 @@ class FixMessage(object):
         function, or by setting a 35=x field, unless testing a scenario
         where the message type is unset."""
 
-        self.message_type = message_type
+        self.message_type = str(message_type)
         return
 
     def set_body_length(self, body_length):
@@ -170,24 +189,31 @@ class FixMessage(object):
         your program logic."""
 
         if int(tag) == 8:
-            v = str(value)
-            if len(v) < len("FIX.x.y"):
-                raise ValueError("Bad version: %s" % v)
-            self.set_version(int(v[4]), int(v[6]))
-            return
+            if not self.raw:
+                v = str(value)
+
+                if len(v) < len("FIX.x.y"):
+                    raise ValueError("Bad version: %s" % v)
+                self.set_version(int(v[4]), int(v[6]))
+                return
 
         if int(tag) == 9:
-            # Ignore body length.
-            return
+            if not self.raw:
+                # Ignore body length tag, we'll calculate the correct
+                # value when generating the message string.
+                return
 
         if int(tag) == 10:
-            # Ignore checksum.
-            return
+            if not self.raw:
+                # Ignore checksum tag, we'll calculate the correct
+                # value when generating the message string.
+                return
 
         if int(tag) == 35:
-            # Promote 35=x to attribute.
-            self.message_type = value
-            return
+            if not self.raw:
+                # Promote 35=x to attribute.
+                self.message_type = value
+                return
 
         self.pairs.append((str(tag), str(value)))
         return
@@ -256,19 +282,27 @@ class FixMessage(object):
             s += '%s=%s' % (tag, value)
             s += SOH
 
+        # Check for raw mode.
+        if self.raw:
+            return s
+
         # Set message type.
         s = "35=%s" % self.message_type + SOH + s
 
         # Calculate and pre-pend body length.
         #
         # From first byte after body length field, to the delimiter
-        # before the checksum (which should be there yet).
+        # before the checksum (which shouldn't be there yet).
         if self.body_length:
             body_length = self.body_length
         else:
             body_length = len(s)
-            
-        s = "8=FIX.%u.%u" % (self.major, self.minor) + SOH + \
+
+        # Prepare begin-string.
+        if not self.begin_string:
+            self.begin_string = "FIX.4.2"
+
+        s = "8=%s" % self.begin_string + SOH + \
             "9=%u" % body_length + SOH + \
             s
 
