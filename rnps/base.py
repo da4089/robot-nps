@@ -640,7 +640,8 @@ class BaseRobot(object):
 
         factory = BaseClientFactory(self, client_name,
                                     server_host, server_port,
-                                    protocol_version)
+                                    protocol_version,
+                                    client_port)
         self.clients[client_name] = factory
         return
 
