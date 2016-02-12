@@ -482,7 +482,7 @@ class BaseRobot(object):
 
         See also 'Create Server'."""
 
-        if not server_name in self.servers:
+        if server_name not in self.servers:
             raise errors.NoSuchServerError(server_name)
 
         factory = self.servers.pop(server_name)
