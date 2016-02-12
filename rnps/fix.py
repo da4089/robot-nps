@@ -273,7 +273,7 @@ class FixMessage(object):
 
         return None
 
-    def to_buf(self):
+    def encode(self):
         """Convert message to on-the-wire FIX format."""
 
         # Walk pairs, creating string.

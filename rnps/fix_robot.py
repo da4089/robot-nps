@@ -74,6 +74,7 @@ class FixClient(BaseClient):
         self.set_protocol("FIX")
         BaseClient.__init__(self, factory, address)
         self.parser = FixParser()
+        self.out_seq = 0
         return
 
     def dataReceived(self, data):
@@ -148,7 +149,8 @@ class FixRobot(BaseRobot):
         if name in self.messages:
             raise errors.DuplicateMessageError(name)
 
-        self.messages[name] = FixMessage()
+        m = FixMessage()
+        self.messages[name] = m
         return
 
     def destroy_message(self, name):
@@ -156,6 +158,46 @@ class FixRobot(BaseRobot):
             raise errors.NoSuchMessageError(name)
 
         del self.messages[name]
+        return
+
+    def set_raw(self, message_name):
+        msg = self.messages.get(message_name)
+        if not msg:
+            raise errors.NoSuchMessageError(message_name)
+
+        msg.set_raw()
+        return
+
+    def set_session_version(self, message_name, begin_string):
+        msg = self.messages.get(message_name)
+        if not msg:
+            raise errors.NoSuchMessageError(message_name)
+
+        msg.set_session_version(begin_string)
+        return
+
+    def set_message_type(self, message_name, msg_type):
+        msg = self.messages.get(message_name)
+        if not msg:
+            raise errors.NoSuchMessageError(message_name)
+
+        msg.set_message_type(msg_type)
+        return
+
+    def set_body_length(self, message_name, length):
+        msg = self.messages.get(message_name)
+        if not msg:
+            raise errors.NoSuchMessageError(message_name)
+
+        msg.set_body_length(length)
+        return
+
+    def set_checksum(self, message_name, checksum):
+        msg = self.messages.get(message_name)
+        if not msg:
+            raise errors.NoSuchMessageError(message_name)
+
+        msg.set_checksum(length)
         return
 
     def set_integer_field(self, message_name, tag, value):
@@ -230,6 +272,31 @@ class FixRobot(BaseRobot):
             raise errors.BadFieldNameError(tag)
 
         return value
+
+    def send_client_message(self, client_name, message_name):
+        """Send a message from the named client session."""
+
+        client = self.clients.get(client_name)
+        if not client:
+            raise errors.NoSuchClientError(client_name)
+
+        msg = self.messages.get(message_name)
+        if not msg:
+            raise errors.NoSuchMessageError(message_name)
+
+        if not client.session:
+            raise errors.ClientSessionNotConnectedError(client_name)
+
+        seq = msg.get(34)
+        if seq is None:
+            client.session.out_seq += 1
+            msg.append_pair(34, client.session.out_seq)
+
+        if hasattr(msg, "_payload"):
+            msg.message = msg._payload.encode()
+
+        client.session.send_buffer(msg.encode())
+        return
 
 
 ########################################################################
