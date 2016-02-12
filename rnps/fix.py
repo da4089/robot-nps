@@ -194,7 +194,7 @@ class FixMessage(object):
 
                 if len(v) < len("FIX.x.y"):
                     raise ValueError("Bad version: %s" % v)
-                self.set_version(int(v[4]), int(v[6]))
+                self.set_session_version(v)
                 return
 
         if int(tag) == 9:
