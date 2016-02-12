@@ -37,7 +37,7 @@ import struct
 
 LF = '\n'
 
-class ClientHeartbeat:
+class ClientHeartbeat(object):
     _type = 'R'
 
     def __init__(self):
@@ -52,7 +52,7 @@ class ClientHeartbeat:
         return
 
 
-class Debug:
+class Debug(object):
     _type = '+'
 
     def __init__(self):
@@ -76,7 +76,7 @@ class Debug:
         return
 
 
-class EndOfSession:
+class EndOfSession(object):
     _type = 'Z'
 
     def __init__(self):
@@ -91,7 +91,7 @@ class EndOfSession:
         return
 
 
-class LoginAccepted:
+class LoginAccepted(object):
     _format = 'c10s20sc'
     _type = 'A'
 
@@ -112,7 +112,7 @@ class LoginAccepted:
         return
 
 
-class LoginRejected:
+class LoginRejected(object):
     _format = 'ccc'
     _type = 'J'
 
@@ -137,7 +137,7 @@ class LoginRejected:
         return
 
 
-class LoginRequest:
+class LoginRequest(object):
     _format = 'c6s10s10s20sc'
     _type = 'L'
 
@@ -168,7 +168,7 @@ class LoginRequest:
         return
 
 
-class LogoutRequest:
+class LogoutRequest(object):
     _format = 'cc'
     _type = 'O'
 
@@ -185,7 +185,7 @@ class LogoutRequest:
         return
 
 
-class SequencedData:
+class SequencedData(object):
     _type = 'S'
 
     def __init__(self):
@@ -209,7 +209,7 @@ class SequencedData:
         return
 
 
-class ServerHeartbeat:
+class ServerHeartbeat(object):
     _format = 'cc'
     _type = 'H'
 
@@ -228,7 +228,7 @@ class ServerHeartbeat:
         return
 
 
-class UnsequencedData:
+class UnsequencedData(object):
     _type = 'U'
 
     def __init__(self):
