@@ -32,7 +32,7 @@ class FixTests(unittest.TestCase):
 
     def test_basic_fix_message(self):
         pkt = fix.FixMessage()
-        pkt.set_session_version("FIX 4.2")
+        pkt.set_session_version("FIX.4.2")
         pkt.set_message_type('D')
         pkt.append_pair(29, "A")
         buf = pkt.to_buf()
@@ -60,7 +60,7 @@ class FixTests(unittest.TestCase):
 
     def test_set_session_version(self):
         pkt = fix.FixMessage()
-        pkt.set_session_version("FIX 4.4")
+        pkt.set_session_version("FIX.4.4")
         self.assertEqual("8=FIX.4.4\x019=5\x0135=0\x0110=163\x01", pkt.to_buf())
         return
 
