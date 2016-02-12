@@ -35,7 +35,7 @@ class FixTests(unittest.TestCase):
         pkt.set_session_version("FIX.4.2")
         pkt.set_message_type('D')
         pkt.append_pair(29, "A")
-        buf = pkt.to_buf()
+        buf = pkt.encode()
 
         p = fix.FixParser()
         p.append_buffer(buf)
@@ -48,20 +48,20 @@ class FixTests(unittest.TestCase):
     def test_raw_empty_message(self):
         pkt = fix.FixMessage()
         pkt.set_raw()
-        self.assertEqual("", pkt.to_buf())
+        self.assertEqual("", pkt.encode())
         return
 
     def test_raw_begin_string(self):
         pkt = fix.FixMessage()
         pkt.set_raw()
         pkt.append_pair(8, "FIX.4.4")
-        self.assertEqual("8=FIX.4.4\x01", pkt.to_buf())
+        self.assertEqual("8=FIX.4.4\x01", pkt.encode())
         return
 
     def test_set_session_version(self):
         pkt = fix.FixMessage()
         pkt.set_session_version("FIX.4.4")
-        self.assertEqual("8=FIX.4.4\x019=5\x0135=0\x0110=163\x01", pkt.to_buf())
+        self.assertEqual("8=FIX.4.4\x019=5\x0135=0\x0110=163\x01", pkt.encode())
         return
 
     def test_get_repeating(self):
@@ -81,26 +81,26 @@ class FixTests(unittest.TestCase):
         pkt = fix.FixMessage()
         pkt.set_raw()
         pkt.append_pair(9, 42)
-        self.assertEqual("9=42\x01", pkt.to_buf())
+        self.assertEqual("9=42\x01", pkt.encode())
         return
 
     def test_raw_checksum(self):
         pkt = fix.FixMessage()
         pkt.set_raw()
         pkt.append_pair(10, 42)
-        self.assertEqual("10=42\x01", pkt.to_buf())
+        self.assertEqual("10=42\x01", pkt.encode())
         return
 
     def test_raw_msg_type(self):
         pkt = fix.FixMessage()
         pkt.set_raw()
         pkt.append_pair(35, "D")
-        self.assertEqual("35=D\x01", pkt.to_buf())
+        self.assertEqual("35=D\x01", pkt.encode())
         return
 
     def test_empty_message(self):
         pkt = fix.FixMessage()
-        self.assertEqual("8=FIX.4.2\x019=5\x0135=0\x0110=161\x01", pkt.to_buf())
+        self.assertEqual("8=FIX.4.2\x019=5\x0135=0\x0110=161\x01", pkt.encode())
         return
 
 
