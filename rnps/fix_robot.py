@@ -197,7 +197,7 @@ class FixRobot(BaseRobot):
         if not msg:
             raise errors.NoSuchMessageError(message_name)
 
-        msg.set_checksum(length)
+        msg.set_checksum(checksum)
         return
 
     def set_integer_field(self, message_name, tag, value):
