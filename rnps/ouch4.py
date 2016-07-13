@@ -59,7 +59,7 @@ def get_message(soup_type, buf):
 
 class OuchMessage(object):
     _ouch_type = None
-    
+
     def get_type(self):
         return self._ouch_type
 
@@ -229,7 +229,7 @@ class ModifyOrder(OuchMessage):
 class SystemEvent(OuchMessage):
     _format = '!cQc'
     _ouch_type = 'S'
-    
+
     START_OF_DAY = 'S'
     END_OF_DAY = 'E'
 
@@ -251,7 +251,7 @@ class SystemEvent(OuchMessage):
         self.event_code = fields[2]
         return
 
-        
+
 class Accepted(OuchMessage):
     _format = '!cQ14scL8sLL4scQccLccc'
     _ouch_type = 'A'
@@ -315,7 +315,7 @@ class Accepted(OuchMessage):
         self.order_state = fields[15]
         self.bbo_weight_indicator = fields[16]
         return
-        
+
 
 class Replaced(OuchMessage):
     _format = '!cQ14scL8sLL4scQccLcc14sc'
@@ -485,7 +485,7 @@ class Executed(OuchMessage):
         self.liquidity_flag = fields[5]
         self.match_number = fields[6]
         return
-    
+
 
 class BrokenTrade(OuchMessage):
     _format = '!cQ14sQc'
