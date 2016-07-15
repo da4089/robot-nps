@@ -74,6 +74,8 @@ Legal OUCH Types
     OUCH.Set Ouch Type    seq    C
     OUCH.Set Ouch Type    seq    D
     OUCH.Set Ouch Type    seq    E
+    OUCH.Set Ouch Type    seq    F
+    OUCH.Set Ouch Type    seq    G
     OUCH.Set Ouch Type    seq    I
     OUCH.Set Ouch Type    seq    J
     OUCH.Set Ouch Type    seq    K
