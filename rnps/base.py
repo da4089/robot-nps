@@ -1,7 +1,7 @@
 ########################################################################
 # robot-nps, Network Protocol Simulator for Robot Framework
 #
-# Copyright (C) 2014 David Arnold
+# Copyright (C) 2014-2016 David Arnold
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -482,7 +482,7 @@ class BaseRobot(object):
 
         See also 'Create Server'."""
 
-        if not server_name in self.servers:
+        if server_name not in self.servers:
             raise errors.NoSuchServerError(server_name)
 
         factory = self.servers.pop(server_name)
@@ -640,7 +640,8 @@ class BaseRobot(object):
 
         factory = BaseClientFactory(self, client_name,
                                     server_host, server_port,
-                                    protocol_version)
+                                    protocol_version,
+                                    client_port)
         self.clients[client_name] = factory
         return
 
