@@ -1,7 +1,7 @@
 ########################################################################
 # robot-nps, Network Protocol Simulator for Robot Framework
 #
-# Copyright (C) 2014 David Arnold
+# Copyright (C) 2014-2016 David Arnold
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -58,7 +58,7 @@ class OuchServerSession(BaseServerSession):
                              "length %u, ouch_type [%s]",
                              soup_type, len(msg.message), msg.message[0:1])
 
-                msg._payload = ouch4.get_message(soup_type, msg.message)
+                msg.set_payload(ouch4.get_message(soup_type, msg.message))
 
             self.received_messages.append(msg)
             logger.info("%s: server queuing %s", self.factory.name, soup_type)
@@ -105,7 +105,7 @@ class OuchClient(BaseClient):
                              "length %u, ouch_type [%s]",
                              soup_type, len(msg.message), msg.message[0:1])
 
-                msg._payload = ouch4.get_message(soup_type, msg.message)
+                msg.set_payload(ouch4.get_message(soup_type, msg.message))
 
             self.received_messages.append(msg)
             logger.info("%s: client queuing %s", self.factory.name, soup_type)
@@ -229,7 +229,7 @@ class OuchRobot(BaseRobot):
         if not constructor:
             raise errors.BadMessageTypeError(ouch_type)
 
-        msg._payload = constructor()
+        msg.set_payload(constructor())
         return
 
     def get_ouch_type(self, message_name):
