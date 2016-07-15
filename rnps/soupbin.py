@@ -1,7 +1,7 @@
 ########################################################################
 # robot-nps, Network Protocol Simulator for Robot Framework
 #
-# Copyright (C) 2014 David Arnold
+# Copyright (C) 2014-2016 David Arnold
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -40,7 +40,7 @@ def has_complete_message(buf):
         # SoupBin header is 3 bytes.
         return False
 
-    length, soup_type = struct.unpack("!Hc", buf[:3])
+    length = struct.unpack("!Hc", buf[:3])[0]
     if len(buf) < length + 2:
         # SoupBin header length field is count of following bytes (so + 2).
         return False
@@ -56,7 +56,7 @@ def get_message(buf):
     if len(buf) < 3:
         return None, buf
 
-    soup_length, soup_type = struct.unpack("!Hc", buf[:3])
+    soup_length = struct.unpack("!Hc", buf[:3])[0]
     if len(buf) < soup_length + 2:
         return None, buf
 
@@ -127,7 +127,7 @@ class Debug(SoupMessage):
 
         # Bytes 0 & 1 are len, 2 is type, 3+ are payload.
         # Length: +1 for type, +1 for Python slicing.
-        self.text = buf[3:soup_len + 2] 
+        self.text = buf[3:soup_len + 2]
         return
 
 
