@@ -1,7 +1,7 @@
 ########################################################################
 # robot-nps, Network Protocol Simulator for Robot Framework
 #
-# Copyright (C) 2014 David Arnold
+# Copyright (C) 2014-2016 David Arnold
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
 #
 ########################################################################
 
-# Implements NASDAQ OUCH 4.2 as at 2013/02/25.
+# Implements NASDAQ OUCH 4.2 as at 2016/02/29.
 #
 # OUCH4 is a simple order protocol.  It uses binary numbers, in contrast
 # to its precursor, OUCH3.  Messages are relatively compact, and require
@@ -487,6 +487,85 @@ class Executed(OuchMessage):
         return
 
 
+class ExecutedWithReferencePrice(OuchMessage):
+    _format = '!cQ14sLLcQLc'
+    _ouch_type = 'G'
+
+    def __init__(self):
+        self.timestamp = 0
+        self.order_token = ''
+        self.executed_shares = 0
+        self.execution_price = 0
+        self.liquidity_flag = ''
+        self.match_number = 0
+        self.reference_price = 0
+        self.reference_price_type = ''
+        return
+
+    def encode(self):
+        return struct.pack(self._format,
+                           self._ouch_type,
+                           self.timestamp,
+                           self.order_token.ljust(14),
+                           self.executed_shares,
+                           self.execution_price,
+                           self.liquidity_flag,
+                           self.match_number,
+                           self.reference_price,
+                           self.reference_price_type)
+
+    def decode(self, buf):
+        fields = struct.unpack(self._format, buf)
+        assert fields[0] == self._ouch_type
+        self.timestamp = fields[1]
+        self.order_token = fields[2].strip()
+        self.executed_shares = fields[3]
+        self.execution_price = fields[4]
+        self.liquidity_flag = fields[5]
+        self.match_number = fields[6]
+        self.reference_price = fields[7]
+        self.reference_price_type = fields[8]
+        return
+
+
+class TradeCorrection(OuchMessage):
+    _format = '!cQ14sLLcQc'
+    _ouch_type = 'F'
+
+    def __init__(self):
+        self.timestamp = 0
+        self.order_token = ''
+        self.executed_shares = 0
+        self.execution_price = 0
+        self.liquidity_flag = ''
+        self.match_number = 0
+        self.trade_correction_reason = 0
+        return
+
+    def encode(self):
+        return struct.pack(self._format,
+                           self._ouch_type,
+                           self.timestamp,
+                           self.order_token.ljust(14),
+                           self.executed_shares,
+                           self.execution_price,
+                           self.liquidity_flag,
+                           self.match_number,
+                           self.trade_correction_reason)
+
+    def decode(self, buf):
+        fields = struct.unpack(self._format, buf)
+        assert fields[0] == self._ouch_type
+        self.timestamp = fields[1]
+        self.order_token = fields[2].strip()
+        self.executed_shares = fields[3]
+        self.execution_price = fields[4]
+        self.liquidity_flag = fields[5]
+        self.match_number = fields[6]
+        self.trade_correction_reason = fields[7]
+        return
+
+
 class BrokenTrade(OuchMessage):
     _format = '!cQ14sQc'
     _ouch_type = 'B'
@@ -621,7 +700,7 @@ class CancelReject(OuchMessage):
 
 
 class OrderPriorityUpdate(OuchMessage):
-    _format = 'cQ14sLcQ'
+    _format = '!cQ14sLcQ'
     _ouch_type = 'T'
 
     def __init__(self):
@@ -694,6 +773,8 @@ SEQUENCED_MESSAGES = {
     "C": Canceled,
     "D": AIQCanceled,
     "E": Executed,
+    "F": TradeCorrection,
+    "G": ExecutedWithReferencePrice,
     "I": CancelReject,
     "J": Rejected,
     "K": PriceCorrection,
@@ -714,6 +795,7 @@ INTEGER_FIELDS = [
     "order_reference_number",
     "price",
     "quantity_prevented_from_trading",
+    "reference_price",
     "shares",
     "time_in_force",
     "timestamp",
