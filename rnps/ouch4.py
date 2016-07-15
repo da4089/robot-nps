@@ -700,7 +700,7 @@ class CancelReject(OuchMessage):
 
 
 class OrderPriorityUpdate(OuchMessage):
-    _format = 'cQ14sLcQ'
+    _format = '!cQ14sLcQ'
     _ouch_type = 'T'
 
     def __init__(self):
