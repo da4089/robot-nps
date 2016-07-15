@@ -1,7 +1,7 @@
 ########################################################################
 # robot-nps, Network Protocol Simulator for Robot Framework
 #
-# Copyright (C) 2015 David Arnold
+# Copyright (C) 2015-2016 David Arnold
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -318,7 +318,7 @@ class Accepted(OuchMessage):
         self.short_sell_quantity = fields[23]
         self.minimum_acceptable_quantity = fields[24]
         return
-        
+
 
 class Replaced(OuchMessage):
     _format = '!c Q 14s 14s L c Q Q L B B 10s B 15s 32s c L ' + \
@@ -525,7 +525,7 @@ class Executed(OuchMessage):
 
         self.match_id = match_id
         return
-    
+
 
 class Rejected(OuchMessage):
     _format = '!c Q 14s L'
