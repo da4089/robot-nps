@@ -806,6 +806,7 @@ Certification Workflow
     OUCH.Set Ouch Field    n_s_modified    order_token    TEST_N1
     OUCH.Set Ouch Field    n_s_modified    buy_sell_indicator    E
     OUCH.Set Ouch Field    n_s_modified    shares    1000
+    OUCH.Send Server Message    session_a    n_s_modified
 
     Comment    <- Executed (full)
 
