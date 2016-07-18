@@ -415,6 +415,8 @@ class Replaced(OuchMessage):
                            self.price,
                            self.time_in_force,
                            self.open_close,
+                           self.client_account,
+                           self.order_state,
                            self.customer_info.ljust(15),
                            self.exchange_info.ljust(32),
                            self.clearing_participant,
@@ -511,20 +513,6 @@ class Executed(OuchMessage):
         return
 
     def encode(self):
-        m =  chr((self.match_id >> 88) & 0xff)
-        m += chr((self.match_id >> 80) & 0xff)
-        m += chr((self.match_id >> 72) & 0xff)
-        m += chr((self.match_id >> 64) & 0xff)
-
-        m += chr((self.match_id >> 56) & 0xff)
-        m += chr((self.match_id >> 48) & 0xff)
-        m += chr((self.match_id >> 40) & 0xff)
-        m += chr((self.match_id >> 32) & 0xff)
-
-        m += chr((self.match_id >> 24) & 0xff)
-        m += chr((self.match_id >> 16) & 0xff)
-        m += chr((self.match_id >>  8) & 0xff)
-        m += chr((self.match_id >>  0) & 0xff)
 
         return struct.pack(self._format,
                            self._ouch_type,
@@ -533,7 +521,18 @@ class Executed(OuchMessage):
                            self.order_book_id,
                            self.traded_quantity,
                            self.trade_price,
-                           m,
+                           ((self.match_id >> 88) & 0xff),
+                           ((self.match_id >> 80) & 0xff),
+                           ((self.match_id >> 72) & 0xff),
+                           ((self.match_id >> 64) & 0xff),
+                           ((self.match_id >> 56) & 0xff),
+                           ((self.match_id >> 48) & 0xff),
+                           ((self.match_id >> 40) & 0xff),
+                           ((self.match_id >> 32) & 0xff),
+                           ((self.match_id >> 24) & 0xff),
+                           ((self.match_id >> 16) & 0xff),
+                           ((self.match_id >>  8) & 0xff),
+                           ((self.match_id >>  0) & 0xff),
                            self.deal_source,
                            self.match_attributes)
 
@@ -545,34 +544,21 @@ class Executed(OuchMessage):
         self.order_book_id = fields[3]
         self.traded_quantity = fields[4]
         self.trade_price = fields[5]
-        m = fields[6]
-        self.deal_source = fields[7]
-        self.match_attributes = fields[8]
-
-        match_id = 0
-        if True:
-            for i in range(12):
-                match_id |= ord(m[i])
-                if i < 11:
-                    match_id = match_id << 8
-        else:
-            match_id = 0
-            match_id |= ord(m[0]) << 88
-            match_id |= ord(m[1]) << 80
-            match_id |= ord(m[2]) << 72
-            match_id |= ord(m[3]) << 64
-
-            match_id |= ord(m[4]) << 56
-            match_id |= ord(m[5]) << 48
-            match_id |= ord(m[6]) << 40
-            match_id |= ord(m[7]) << 32
-
-            match_id |= ord(m[8]) << 24
-            match_id |= ord(m[9]) << 16
-            match_id |= ord(m[10]) << 8
-            match_id |= ord(m[11])
-
-        self.match_id = match_id
+        self.match_id = 0
+        self.match_id |= fields[6] << 88
+        self.match_id |= fields[7] << 80
+        self.match_id |= fields[8] << 72
+        self.match_id |= fields[9] << 64
+        self.match_id |= fields[10] << 56
+        self.match_id |= fields[11] << 48
+        self.match_id |= fields[12] << 40
+        self.match_id |= fields[13] << 32
+        self.match_id |= fields[14] << 24
+        self.match_id |= fields[15] << 16
+        self.match_id |= fields[16] << 8
+        self.match_id |= fields[17]
+        self.deal_source = fields[18]
+        self.match_attributes = fields[19]
         return
 
 
