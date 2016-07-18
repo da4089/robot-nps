@@ -21,7 +21,8 @@
 
 import argparse
 import logging
-import rnps
+
+from rnps import AsxOuchRobot
 
 from twistedremoteserver import TwistedRemoteServer
 from twisted.internet import reactor
@@ -81,8 +82,8 @@ if __name__ == "__main__":
     else:
         port_file = args.file
 
-    ouch_robot = rnps.OuchRobot()
-    robot_api = TwistedRemoteServer(ouch_robot, interface, port)
+    robot = AsxOuchRobot()
+    robot_api = TwistedRemoteServer(robot, interface, port)
 
     root = Resource()
     root.putChild("RPC2", robot_api)
