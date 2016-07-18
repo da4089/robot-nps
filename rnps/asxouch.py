@@ -33,8 +33,6 @@
 ########################################################################
 
 import struct
-import errors
-
 from ouch4 import OuchMessage
 
 
@@ -90,34 +88,6 @@ class EnterOrder(OuchMessage):
         return
 
     def encode(self):
-        print "AAAAAAAAAAAAAAAAA"
-        l = [self._format,
-                           self._ouch_type,
-                           self.order_token.ljust(14),
-                           self.order_book_id,
-                           self.side,
-                           self.quantity,
-                           self.price,
-                           self.time_in_force,
-                           self.open_close,
-                           self.client_account,
-                           self.customer_info,
-                           self.exchange_info,
-                           self.clearing_participant,
-                           self.crossing_key,
-                           self.capacity,
-                           self.directed_wholesale,
-                           self.execution_venue,
-                           self.intermediary_id,
-                           self.order_origin,
-                           self.filler,
-                           self.order_type,
-                           self.short_sell_quantity,
-                           self.minimum_acceptable_quantity]
-        for i in l:
-            print type(i), i
-
-
         return struct.pack(self._format,
                            self._ouch_type,
                            self.order_token.ljust(14),
