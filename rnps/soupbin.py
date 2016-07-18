@@ -40,8 +40,8 @@ def has_complete_message(buf):
         # SoupBin header is 3 bytes.
         return False
 
-    length = struct.unpack("!Hc", buf[:3])[0]
-    if len(buf) < length + 2:
+    soup_length, soup_type = struct.unpack("!Hc", buf[:3])
+    if len(buf) < soup_length + 2:
         # SoupBin header length field is count of following bytes (so + 2).
         return False
 
@@ -56,7 +56,7 @@ def get_message(buf):
     if len(buf) < 3:
         return None, buf
 
-    soup_length = struct.unpack("!Hc", buf[:3])[0]
+    soup_length, soup_type = struct.unpack("!Hc", buf[:3])
     if len(buf) < soup_length + 2:
         return None, buf
 
