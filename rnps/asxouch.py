@@ -1,7 +1,7 @@
 ########################################################################
 # robot-nps, Network Protocol Simulator for Robot Framework
 #
-# Copyright (C) 2014 David Arnold
+# Copyright (C) 2015-2016 David Arnold
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,20 +18,22 @@
 #
 ########################################################################
 
-# Implements ASX OUCH as at 2015/02/25.
+# Implements ASX OUCH SR8 as at 2015/04/25.
 #
-# OUCH4 is a simple order protocol.  It uses binary numbers, in contrast
-# to its precursor, OUCH3.  Messages are relatively compact, and require
-# a client-side state machine to maintain an accurate view of the active
-# order book.
+# ASX OUCH is implemented by NASDAQ OMX's Genium INET platform, as
+# deployed for ASX.  It's based on NASDAQ's OUCH4, but has a bunch of
+# extra fields.
 #
-# OUCH4 is typically encapsulated in the SoupBinTCP 3.0 or UFO framing
-# protocols.
+# Source documents:
+# - ASX Trade OUCH v1.0 (document #036435).
+# - ASX OUCH Message Specification, v2.0, 2 September 2013.
+# - ASX Trade OUCH Specification, Q2 2015 Release - SR8, 18 March 2015.
+# - ASX Trade Q2 2015 Release (SR8) Appendices to ASX Notice.
 
 ########################################################################
 
 import struct
-import errors
+from ouch4 import OuchMessage
 
 
 ########################################################################
@@ -57,98 +59,107 @@ def get_message(soup_type, buf):
 
 ########################################################################
 
-class OuchMessage(object):
-    _ouch_type = None
-    
-    def get_type(self):
-        return self._ouch_type
-
-    def set_field(self, field_name, value):
-        if field_name[0:1] == "_" or not hasattr(self, field_name):
-            raise errors.BadFieldNameError(field_name)
-
-        setattr(self, field_name, value)
-        return
-
-    def has_field(self, field_name):
-        return hasattr(self, field_name)
-
-    def get_field(self, field_name):
-        if field_name[0:1] == "_" or not hasattr(self, field_name):
-            raise errors.BadFieldNameError(field_name)
-
-        return getattr(self, field_name)
-
-
 class EnterOrder(OuchMessage):
-    _format = '!c14scL8sLL4scccLcc'
+    _format = '!c 14s L c Q L B B 10s 15s 32s c L c c 4s 10s 20s 8s c Q Q'
     _ouch_type = 'O'
 
     def __init__(self):
         self.order_token = ''
-        self.buy_sell_indicator = ''
-        self.shares = 0
-        self.stock = ''
+        self.order_book_id = 0
+        self.side = ''
+        self.quantity = 0
         self.price = 0
         self.time_in_force = 0
-        self.firm = ''
-        self.display = ''
+        self.open_close = 0
+        self.client_account = ''
+        self.customer_info = ''
+        self.exchange_info = ''
+        self.clearing_participant = ''
+        self.crossing_key = 0
         self.capacity = ''
-        self.intermarket_sweep_eligibility = ''
-        self.minimum_quantity = 0
-        self.cross_type = ''
-        self.customer_type = ''
+        self.directed_wholesale = ''
+        self.execution_venue = ''
+        self.intermediary_id = ''
+        self.order_origin = ''
+        self.filler = '        '
+        self.order_type = ''
+        self.short_sell_quantity = 0
+        self.minimum_acceptable_quantity = 0
         return
 
     def encode(self):
         return struct.pack(self._format,
                            self._ouch_type,
                            self.order_token.ljust(14),
-                           self.buy_sell_indicator,
-                           self.shares,
-                           self.stock.ljust(8),
+                           self.order_book_id,
+                           self.side,
+                           self.quantity,
                            self.price,
                            self.time_in_force,
-                           self.firm.ljust(4),
-                           self.display,
+                           self.open_close,
+                           self.client_account,
+                           self.customer_info,
+                           self.exchange_info,
+                           self.clearing_participant,
+                           self.crossing_key,
                            self.capacity,
-                           self.intermarket_sweep_eligibility,
-                           self.minimum_quantity,
-                           self.cross_type,
-                           self.customer_type)
+                           self.directed_wholesale,
+                           self.execution_venue,
+                           self.intermediary_id,
+                           self.order_origin,
+                           self.filler,
+                           self.order_type,
+                           self.short_sell_quantity,
+                           self.minimum_acceptable_quantity)
 
     def decode(self, buf):
         fields = struct.unpack(self._format, buf)
         assert fields[0] == self._ouch_type
         self.order_token = fields[1].strip()
-        self.buy_sell_indicator = fields[2]
-        self.shares = fields[3]
-        self.stock = fields[4].strip()
-        self.price = fields[5]
-        self.time_in_force = fields[6]
-        self.firm = fields[7].strip()
-        self.display = fields[8]
-        self.capacity = fields[9]
-        self.intermarket_sweep_eligibility = fields[10]
-        self.minimum_quantity = fields[11]
-        self.cross_type = fields[12]
-        self.customer_type = fields[13]
+        self.order_book_id = int(fields[2])
+        self.side = fields[3]
+        self.quantity = int(fields[4])
+        self.price = int(fields[5])
+        self.time_in_force = int(fields[6])
+        self.open_close = int(fields[7])
+        self.client_account = fields[8].strip()
+        self.customer_info = fields[9].strip()
+        self.exchange_info = fields[10].strip()
+        self.clearing_participant = fields[11]
+        self.crossing_key = int(fields[12])
+        self.capacity = fields[13]
+        self.directed_wholesale = fields[14]
+        self.execution_venue = fields[15]
+        self.intermediary_id = fields[16].strip()
+        self.order_origin = fields[17].strip()
+        # filler (8 spaces)
+        self.order_type = fields[19]
+        self.short_sell_quantity = int(fields[20])
+        self.minimum_acceptable_quantity = int(fields[21])
         return
 
 
 class ReplaceOrder(OuchMessage):
-    _format = '!c14s14sLLLccL'
+    _format = '!c 14s 14s Q L B 10s 15s 32s c c 4s 10s 20s 8s Q Q'
     _ouch_type = 'U'
 
     def __init__(self):
         self.existing_order_token = ''
         self.replacement_order_token = ''
-        self.shares = 0
+        self.quantity = 0
         self.price = 0
-        self.time_in_force = 0
-        self.display = ''
-        self.intermarket_sweep_eligibility = ''
-        self.minimum_quantity = 0
+        self.open_close = 0
+        self.client_account = ''
+        self.customer_info = ''
+        self.exchange_info = ''
+        self.capacity = ''
+        self.directed_wholesale = ''
+        self.execution_venue = ''
+        self.intermediary_id = ''
+        self.order_origin = ''
+        self.filler = '        '
+        self.short_sell_quantity = 0
+        self.minimum_acceptable_quantity = 0
         return
 
     def encode(self):
@@ -156,123 +167,118 @@ class ReplaceOrder(OuchMessage):
                            self._ouch_type,
                            self.existing_order_token.ljust(14),
                            self.replacement_order_token.ljust(14),
-                           self.shares,
+                           self.quantity,
                            self.price,
-                           self.time_in_force,
-                           self.display,
-                           self.intermarket_sweep_eligibility,
-                           self.minimum_quantity)
+                           self.open_close,
+                           self.client_account,
+                           self.customer_info,
+                           self.exchange_info,
+                           self.capacity,
+                           self.directed_wholesale,
+                           self.execution_venue,
+                           self.intermediary_id,
+                           self.order_origin,
+                           self.filler,
+                           self.short_sell_quantity,
+                           self.minimum_acceptable_quantity)
 
     def decode(self, buf):
         fields = struct.unpack(self._format, buf)
         assert fields[0] == self._ouch_type
         self.existing_order_token = fields[1].strip()
         self.replacement_order_token = fields[2].strip()
-        self.shares = fields[3]
-        self.price = fields[4]
-        self.time_in_force = fields[5]
-        self.display = fields[6]
-        self.intermarket_sweep_eligibility = fields[7]
-        self.minimum_quantity = fields[8]
+        self.quantity = int(fields[3])
+        self.price = int(fields[4])
+        self.open_close = int(fields[5])
+        self.client_account = fields[6]
+        self.customer_info = fields[7]
+        self.exchange_info = fields[8]
+        self.capacity = fields[9]
+        self.directed_wholesale = fields[10]
+        self.execution_venue = fields[11]
+        self.intermediary_id = fields[12]
+        self.order_origin = fields[13]
+        # filler
+        self.short_sell_quantity = int(fields[15])
+        self.minimum_acceptable_quantity = int(fields[16])
         return
 
 
 class CancelOrder(OuchMessage):
-    _format = '!c14sL'
+    _format = '!c 14s'
     _ouch_type = 'X'
 
     def __init__(self):
         self.order_token = ''
-        self.shares = 0
         return
 
     def encode(self):
         return struct.pack(self._format,
                            self._ouch_type,
-                           self.order_token.ljust(14),
-                           self.shares)
+                           self.order_token.ljust(14))
 
     def decode(self, buf):
         fields = struct.unpack(self._format, buf)
         assert fields[0] == self._ouch_type
         self.order_token = fields[1].strip()
-        self.shares = fields[2]
         return
 
 
-class ModifyOrder(OuchMessage):
-    _format = '!c14scL'
-    _ouch_type = 'M'
+class CancelByOrderId(OuchMessage):
+    _format = '!c L c Q'
+    _ouch_type = 'Y'
 
     def __init__(self):
-        self.order_token = ''
-        self.buy_sell_indicator = ''
-        self.shares = 0
+        self.order_book_id = 0
+        self.side = ''
+        self.order_id = 0
         return
 
     def encode(self):
         return struct.pack(self._format,
                            self._ouch_type,
-                           self.order_token.ljust(14),
-                           self.buy_sell_indicator,
-                           self.shares)
+                           self.order_book_id,
+                           self.side,
+                           self.order_id)
 
     def decode(self, buf):
         fields = struct.unpack(self._format, buf)
         assert fields[0] == self._ouch_type
-        self.order_token = fields[1].strip()
-        self.buy_sell_indicator = fields[2]
-        self.shares = fields[3]
+        self.order_book_id = int(fields[1])
+        self.side = fields[2]
+        self.order_id = int(fields[3])
         return
 
 
-class SystemEvent(OuchMessage):
-    _format = '!cQc'
-    _ouch_type = 'S'
-    
-    START_OF_DAY = 'S'
-    END_OF_DAY = 'E'
-
-    def __init__(self):
-        self.timestamp = 0
-        self.event_code = ''
-        return
-
-    def encode(self):
-        return struct.pack(self._format,
-                           self._ouch_type,
-                           self.timestamp,
-                           self.event_code)
-
-    def decode(self, buf):
-        fields = struct.unpack(self._format, buf)
-        assert fields[0] == self._ouch_type
-        self.timestamp = fields[1]
-        self.event_code = fields[2]
-        return
-
-        
 class Accepted(OuchMessage):
-    _format = '!cQ14scL8sLL4scQccLccc'
+    _format = '!c Q 14s L c Q Q L B B 10s B 15s 32s c L c c 4s 10s 20s 8s c Q Q'
     _ouch_type = 'A'
 
     def __init__(self):
         self.timestamp = 0
         self.order_token = ''
-        self.buy_sell_indicator = ''
-        self.shares = 0
-        self.stock = ''
+        self.order_book_id = 0
+        self.side = ''
+        self.order_id = 0
+        self.quantity = 0
         self.price = 0
         self.time_in_force = 0
-        self.firm = ''
-        self.display = ''
-        self.order_reference_number = 0
+        self.open_close = 0
+        self.client_account = ''
+        self.order_state = 0
+        self.customer_info = ''
+        self.exchange_info = ''
+        self.clearing_participant = ''
+        self.crossing_key = 0
         self.capacity = ''
-        self.intermarket_sweep_eligibility = ''
-        self.minimum_quantity = 0
-        self.cross_type = ''
-        self.order_state = ''
-        self.bbo_weight_indicator = ''
+        self.directed_wholesale = ''
+        self.execution_venue = ''
+        self.intermediary_id = ''
+        self.order_origin = ''
+        self.filler = '        '
+        self.order_type = ''
+        self.short_sell_quantity = 0
+        self.minimum_acceptable_quantity = 0
         return
 
     def encode(self):
@@ -280,65 +286,90 @@ class Accepted(OuchMessage):
                            self._ouch_type,
                            self.timestamp,
                            self.order_token.ljust(14),
-                           self.buy_sell_indicator,
-                           self.shares,
-                           self.stock.ljust(8),
+                           self.order_book_id,
+                           self.side,
+                           self.order_id,
+                           self.quantity,
                            self.price,
                            self.time_in_force,
-                           self.firm.ljust(4),
-                           self.display,
-                           self.order_reference_number,
-                           self.capacity,
-                           self.intermarket_sweep_eligibility,
-                           self.minimum_quantity,
-                           self.cross_type,
+                           self.open_close,
+                           self.client_account,
                            self.order_state,
-                           self.bbo_weight_indicator)
+                           self.customer_info,
+                           self.exchange_info,
+                           self.clearing_participant,
+                           self.crossing_key,
+                           self.capacity,
+                           self.directed_wholesale,
+                           self.execution_venue,
+                           self.intermediary_id,
+                           self.order_origin,
+                           self.filler,
+                           self.order_type,
+                           self.short_sell_quantity,
+                           self.minimum_acceptable_quantity)
 
     def decode(self, buf):
         fields = struct.unpack(self._format, buf)
         assert fields[0] == self._ouch_type
         self.timestamp = fields[1]
         self.order_token = fields[2].strip()
-        self.buy_sell_indicator = fields[3]
-        self.shares = fields[4]
-        self.stock = fields[5].strip()
-        self.price = fields[6]
-        self.time_in_force = fields[7]
-        self.firm = fields[8].strip()
-        self.display = fields[9]
-        self.order_reference_number = fields[10]
-        self.capacity = fields[11]
-        self.intermarket_sweep_eligibility = fields[12]
-        self.minimum_quantity = fields[13]
-        self.cross_type = fields[14]
-        self.order_state = fields[15]
-        self.bbo_weight_indicator = fields[16]
+        self.order_book_id = fields[3]
+        self.side = fields[4]
+        self.order_id = fields[5]
+        self.quantity = fields[6]
+        self.price = fields[7]
+        self.time_in_force = fields[8]
+        self.open_close = fields[9]
+        self.client_account = fields[10]
+        self.order_state = fields[11]
+        self.customer_info = fields[12]
+        self.exchange_info = fields[13]
+        self.clearing_participant = fields[14]
+        self.crossing_key = fields[15]
+        self.capacity = fields[16]
+        self.directed_wholesale = fields[17]
+        self.execution_venue = fields[18]
+        self.intermediary_id = fields[19].strip()
+        self.order_origin = fields[20].strip()
+        # filler (8 spaces)
+        self.order_type = fields[22]
+        self.short_sell_quantity = fields[23]
+        self.minimum_acceptable_quantity = fields[24]
         return
-        
+
 
 class Replaced(OuchMessage):
-    _format = '!cQ14scL8sLL4scQccLcc14sc'
+    _format = '!c Q 14s 14s L c Q Q L B B 10s B 15s 32s c L ' + \
+              'c c 4s 10s 20s 8s c Q Q'
     _ouch_type = 'U'
 
     def __init__(self):
         self.timestamp = 0
         self.replacement_order_token = ''
-        self.buy_sell_indicator = ''
-        self.shares = 0
-        self.stock = ''
+        self.previous_order_token = ''
+        self.order_book_id = 0
+        self.side = ''
+        self.order_id = 0
+        self.quantity = 0
         self.price = 0
         self.time_in_force = 0
-        self.firm = ''
-        self.display = ''
-        self.order_reference_number = 0
+        self.open_close = 0
+        self.client_account = ''
+        self.order_state = 0
+        self.customer_info = ''
+        self.exchange_info = ''
+        self.clearing_participant = ''
+        self.crossing_key = 0
         self.capacity = ''
-        self.intermarket_sweep_eligibility = ''
-        self.minimum_quantity = 0
-        self.cross_type = ''
-        self.order_state = ''
-        self.previous_order_token = ''
-        self.bbo_weight_indicator = ''
+        self.directed_wholesale = ''
+        self.execution_venue = ''
+        self.intermediary_id = ''
+        self.order_origin = ''
+        self.filler = ' ' * 8
+        self.order_type = ''
+        self.short_sell_quantity = 0
+        self.minimum_acceptable_quantity = 0
         return
 
     def encode(self):
@@ -346,54 +377,72 @@ class Replaced(OuchMessage):
                            self._ouch_type,
                            self.timestamp,
                            self.replacement_order_token.ljust(14),
-                           self.buy_sell_indicator,
-                           self.shares,
-                           self.stock.ljust(8),
+                           self.previous_order_token.ljust(14),
+                           self.order_book_id,
+                           self.side,
+                           self.order_id,
+                           self.quantity,
                            self.price,
                            self.time_in_force,
-                           self.firm.ljust(4),
-                           self.display,
-                           self.order_reference_number,
-                           self.capacity,
-                           self.intermarket_sweep_eligibility,
-                           self.minimum_quantity,
-                           self.cross_type,
+                           self.open_close,
+                           self.client_account,
                            self.order_state,
-                           self.previous_order_token.ljust(14),
-                           self.bbo_weight_indicator)
+                           self.customer_info.ljust(15),
+                           self.exchange_info.ljust(32),
+                           self.clearing_participant,
+                           self.crossing_key,
+                           self.capacity,
+                           self.directed_wholesale,
+                           self.execution_venue.ljust(4),
+                           self.intermediary_id.ljust(10),
+                           self.order_origin.ljust(20),
+                           self.filler.ljust(8),
+                           self.order_type,
+                           self.short_sell_quantity,
+                           self.minimum_acceptable_quantity)
 
     def decode(self, buf):
         fields = struct.unpack(self._format, buf)
         assert fields[0] == self._ouch_type
         self.timestamp = fields[1]
         self.replacement_order_token = fields[2].strip()
-        self.buy_sell_indicator = fields[3]
-        self.shares = fields[4]
-        self.stock = fields[5].strip()
-        self.price = fields[6]
-        self.time_in_force = fields[7]
-        self.firm = fields[8].strip()
-        self.display = fields[9]
-        self.order_reference_number = fields[10]
-        self.capacity = fields[11]
-        self.intermarket_sweep_eligibility = fields[12]
-        self.minimum_quantity = fields[13]
-        self.cross_type = fields[14]
-        self.order_state = fields[15]
-        self.previous_order_token = fields[16].strip()
-        self.bbo_weight_indicator = fields[17]
+        self.previous_order_token = fields[3].strip()
+        self.order_book_id = fields[4]
+        self.side = fields[5]
+        self.order_id = fields[6]
+        self.quantity = fields[7]
+        self.price = fields[8]
+        self.time_in_force = fields[9]
+        self.open_close = fields[10]
+        self.client_account = fields[11].strip()
+        self.order_state = fields[12]
+        self.customer_info = fields[13].strip()
+        self.exchange_info = fields[14].strip()
+        self.clearing_participant = fields[15].strip()
+        self.crossing_key = fields[16]
+        self.capacity = fields[17]
+        self.directed_wholesale = fields[18]
+        self.execution_venue = fields[19].strip()
+        self.intermediary_id = fields[20].strip()
+        self.order_origin = fields[21].strip()
+        # filler
+        self.order_type = fields[23]
+        self.short_sell_quantity = fields[24]
+        self.minimum_acceptable_quantity = fields[25]
         return
 
 
 class Canceled(OuchMessage):
-    _format = '!cQ14sLc'
+    _format = '!c Q 14s L c Q B'
     _ouch_type = 'C'
 
     def __init__(self):
         self.timestamp = 0
         self.order_token = ''
-        self.decrement_shares = 0
-        self.reason = ''
+        self.order_book_id = 0
+        self.side = ''
+        self.order_id = 0
+        self.reason = 0
         return
 
     def encode(self):
@@ -401,7 +450,9 @@ class Canceled(OuchMessage):
                            self._ouch_type,
                            self.timestamp,
                            self.order_token.ljust(14),
-                           self.decrement_shares,
+                           self.order_book_id,
+                           self.side,
+                           self.order_id,
                            self.reason)
 
     def decode(self, buf):
@@ -409,153 +460,86 @@ class Canceled(OuchMessage):
         assert fields[0] == self._ouch_type
         self.timestamp = fields[1]
         self.order_token = fields[2].strip()
-        self.decrement_shares = fields[3]
-        self.reason = fields[4]
-        return
-
-
-class AIQCanceled(OuchMessage):
-    _format = '!cQ14sLcLLc'
-    _ouch_type = 'D'
-
-    def __init__(self):
-        self.timestamp = 0
-        self.order_token = ''
-        self.decrement_shares = 0
-        self.reason = ''
-        self.quantity_prevented_from_trading = 0
-        self.execution_price = 0
-        self.liquidity_flag = ''
-        return
-
-    def encode(self):
-        return struct.pack(self._format,
-                           self._ouch_type,
-                           self.timestamp,
-                           self.order_token.ljust(14),
-                           self.decrement_shares,
-                           self.reason,
-                           self.quantity_prevented_from_trading,
-                           self.execution_price,
-                           self.liquidity_flag)
-
-    def decode(self, buf):
-        fields = struct.unpack(self._format, buf)
-        assert fields[0] == self._ouch_type
-        self.timestamp = fields[1]
-        self.order_token = fields[2].strip()
-        self.decrement_shares = fields[3]
-        self.reason = fields[4]
-        self.quantity_prevented_from_trading = fields[5]
-        self.execution_price = fields[6]
-        self.liquidity_flag = fields[7]
+        self.order_book_id = fields[3]
+        self.side = fields[4]
+        self.order_id = fields[5]
+        self.reason = fields[6]
         return
 
 
 class Executed(OuchMessage):
-    _format = '!cQ14sLLcQ'
+    _format = '!c Q 14s L Q L 12B H B'
     _ouch_type = 'E'
 
     def __init__(self):
         self.timestamp = 0
         self.order_token = ''
-        self.executed_shares = 0
-        self.execution_price = 0
-        self.liquidity_flag = ''
-        self.match_number = 0
+        self.order_book_id = 0
+        self.traded_quantity = 0
+        self.trade_price = 0
+        self.match_id = 0
+        self.deal_source = 0
+        self.match_attributes = 0
         return
 
     def encode(self):
+
         return struct.pack(self._format,
                            self._ouch_type,
                            self.timestamp,
                            self.order_token.ljust(14),
-                           self.executed_shares,
-                           self.execution_price,
-                           self.liquidity_flag,
-                           self.match_number)
+                           self.order_book_id,
+                           self.traded_quantity,
+                           self.trade_price,
+                           ((self.match_id >> 88) & 0xff),
+                           ((self.match_id >> 80) & 0xff),
+                           ((self.match_id >> 72) & 0xff),
+                           ((self.match_id >> 64) & 0xff),
+                           ((self.match_id >> 56) & 0xff),
+                           ((self.match_id >> 48) & 0xff),
+                           ((self.match_id >> 40) & 0xff),
+                           ((self.match_id >> 32) & 0xff),
+                           ((self.match_id >> 24) & 0xff),
+                           ((self.match_id >> 16) & 0xff),
+                           ((self.match_id >>  8) & 0xff),
+                           ((self.match_id >>  0) & 0xff),
+                           self.deal_source,
+                           self.match_attributes)
 
     def decode(self, buf):
         fields = struct.unpack(self._format, buf)
         assert fields[0] == self._ouch_type
         self.timestamp = fields[1]
         self.order_token = fields[2].strip()
-        self.executed_shares = fields[3]
-        self.execution_price = fields[4]
-        self.liquidity_flag = fields[5]
-        self.match_number = fields[6]
-        return
-    
-
-class BrokenTrade(OuchMessage):
-    _format = '!cQ14sQc'
-    _ouch_type = 'B'
-
-    def __init__(self):
-        self.timestamp = 0
-        self.order_token = ''
-        self.match_number = 0
-        self.reason = ''
-        return
-
-    def encode(self):
-        return struct.pack(self._format,
-                           self._ouch_type,
-                           self.timestamp,
-                           self.order_token.ljust(14),
-                           self.match_number,
-                           self.reason)
-
-    def decode(self, buf):
-        fields = struct.unpack(self._format, buf)
-        assert fields[0] == self._ouch_type
-        self.timestamp = fields[1]
-        self.order_token = fields[2].strip()
-        self.match_number = fields[3]
-        self.reason = fields[4]
-        return
-
-
-class PriceCorrection(OuchMessage):
-    _format = '!cQ14sQLc'
-    _ouch_type = 'K'
-
-    def __init__(self):
-        self.timestamp = 0
-        self.order_token = ''
-        self.match_number = 0
-        self.new_execution_price = 0
-        self.reason = ''
-        return
-
-    def encode(self):
-        return struct.pack(self._format,
-                           self._ouch_type,
-                           self.timestamp,
-                           self.order_token.ljust(14),
-                           self.match_number,
-                           self.new_execution_price,
-                           self.reason)
-
-    def decode(self, buf):
-        fields = struct.unpack(self._format, buf)
-        assert fields[0] == self._ouch_type
-        self.timestamp = fields[1]
-        self.order_token = fields[2].strip()
-        self.match_number = fields[3]
-        self.new_execution_price = fields[4]
-        self.reason = fields[5]
+        self.order_book_id = fields[3]
+        self.traded_quantity = fields[4]
+        self.trade_price = fields[5]
+        self.match_id = 0
+        self.match_id |= fields[6] << 88
+        self.match_id |= fields[7] << 80
+        self.match_id |= fields[8] << 72
+        self.match_id |= fields[9] << 64
+        self.match_id |= fields[10] << 56
+        self.match_id |= fields[11] << 48
+        self.match_id |= fields[12] << 40
+        self.match_id |= fields[13] << 32
+        self.match_id |= fields[14] << 24
+        self.match_id |= fields[15] << 16
+        self.match_id |= fields[16] << 8
+        self.match_id |= fields[17]
+        self.deal_source = fields[18]
+        self.match_attributes = fields[19]
         return
 
 
 class Rejected(OuchMessage):
-    _format = '!cQ14sc'
+    _format = '!c Q 14s L'
     _ouch_type = 'J'
 
     def __init__(self):
         self.timestamp = 0
         self.order_token = ''
-        self.reason = ''
+        self.reject_code = 0
         return
 
     def encode(self):
@@ -563,160 +547,51 @@ class Rejected(OuchMessage):
                            self._ouch_type,
                            self.timestamp,
                            self.order_token.ljust(14),
-                           self.reason)
+                           self.reject_code)
 
     def decode(self, buf):
         fields = struct.unpack(self._format, buf)
         assert fields[0] == self._ouch_type
         self.timestamp = fields[1]
         self.order_token = fields[2].strip()
-        self.reason = fields[3]
-        return
-
-
-class CancelPending(OuchMessage):
-    _format = '!cQ14s'
-    _ouch_type = 'P'
-
-    def __init__(self):
-        self.timestamp = 0
-        self.order_token = ''
-        return
-
-    def encode(self):
-        return struct.pack(self._format,
-                           self._ouch_type,
-                           self.timestamp,
-                           self.order_token.ljust(14))
-
-    def decode(self, buf):
-        fields = struct.unpack(self._format, buf)
-        assert fields[0] == self._ouch_type
-        self.timestamp = fields[1]
-        self.order_token = fields[2].strip()
-        return
-
-
-class CancelReject(OuchMessage):
-    _format = '!cQ14s'
-    _ouch_type = 'I'
-
-    def __init__(self):
-        self.timestamp = 0
-        self.order_token = ''
-        return
-
-    def encode(self):
-        return struct.pack(self._format,
-                           self._ouch_type,
-                           self.timestamp,
-                           self.order_token.ljust(14))
-
-    def decode(self, buf):
-        fields = struct.unpack(self._format, buf)
-        assert fields[0] == self._ouch_type
-        self.timestamp = fields[1]
-        self.order_token = fields[2].strip()
-        return
-
-
-class OrderPriorityUpdate(OuchMessage):
-    _format = 'cQ14sLcQ'
-    _ouch_type = 'T'
-
-    def __init__(self):
-        self.timestamp = 0
-        self.order_token = ''
-        self.price = 0
-        self.display = ''
-        self.order_reference_number = 0
-        return
-
-    def encode(self):
-        return struct.pack(self._format,
-                           self._ouch_type,
-                           self.timestamp,
-                           self.order_token.ljust(14),
-                           self.price,
-                           self.display,
-                           self.order_reference_number)
-
-    def decode(self, buf):
-        fields = struct.unpack(self._format, buf)
-        assert fields[0] == self._ouch_type
-        self.timestamp = fields[1]
-        self.order_token = fields[2].strip()
-        self.price = fields[3]
-        self.display = fields[4]
-        self.order_reference_number = fields[5]
-        return
-
-
-class OrderModified(OuchMessage):
-    _format = '!cQ14scL'
-    _ouch_type = 'M'
-
-    def __init__(self):
-        self.timestamp = 0
-        self.order_token = ''
-        self.buy_sell_indicator = ''
-        self.shares = 0
-        return
-
-    def encode(self):
-        return struct.pack(self._format,
-                           self._ouch_type,
-                           self.timestamp,
-                           self.order_token.ljust(14),
-                           self.buy_sell_indicator,
-                           self.shares)
-
-    def decode(self, buf):
-        fields = struct.unpack(self._format, buf)
-        assert fields[0] == self._ouch_type
-        self.timestamp = fields[1]
-        self.order_token = fields[2].strip()
-        self.buy_sell_indicator = fields[3]
-        self.shares = fields[4]
+        self.reject_code = fields[3]
         return
 
 
 UNSEQUENCED_MESSAGES = {
-    "M": ModifyOrder,
     "O": EnterOrder,
     "U": ReplaceOrder,
     "X": CancelOrder,
+    "Y": CancelByOrderId,
 }
 
 SEQUENCED_MESSAGES = {
     "A": Accepted,
-    "B": BrokenTrade,
     "C": Canceled,
-    "D": AIQCanceled,
     "E": Executed,
-    "I": CancelReject,
     "J": Rejected,
-    "K": PriceCorrection,
-    "M": OrderModified,
-    "P": CancelPending,
-    "S": SystemEvent,
-    "T": OrderPriorityUpdate,
     "U": Replaced,
 }
 
 INTEGER_FIELDS = [
-    "decrement_shares",
-    "executed_shares",
-    "execution_price",
-    "match_number",
-    "minimum_quantity",
-    "new_execution_price",
-    "order_reference_number",
+    "crossing_key",
+    "deal_source",
+    "match_attributes",
+    "match_id",
+    "minimum_acceptable_quantity",
+    "open_close",
+    "order_book_id",
+    "order_id",
+    "order_state",
     "price",
-    "quantity_prevented_from_trading",
-    "shares",
+    "quantity",
+    "reason",
+    "reject_code",
+    "short_sell_quantity",
     "time_in_force",
     "timestamp",
+    "trade_price",
+    "traded_quantity"
 ]
 
 
