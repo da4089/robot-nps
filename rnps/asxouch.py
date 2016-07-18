@@ -35,7 +35,28 @@
 import struct
 import errors
 
-from ouch4 import get_message, OuchMessage
+from ouch4 import OuchMessage
+
+
+########################################################################
+
+def get_message(soup_type, buf):
+    if len(buf) < 1:
+        return None
+
+    if soup_type == 'S':
+        constructor = SEQUENCED_MESSAGES.get(buf[0])
+    elif soup_type == 'U':
+        constructor = UNSEQUENCED_MESSAGES.get(buf[0])
+    else:
+        return None
+
+    if not constructor:
+        return None
+
+    msg = constructor()
+    msg.decode(buf)
+    return msg
 
 
 ########################################################################
@@ -69,6 +90,34 @@ class EnterOrder(OuchMessage):
         return
 
     def encode(self):
+        print "AAAAAAAAAAAAAAAAA"
+        l = [self._format,
+                           self._ouch_type,
+                           self.order_token.ljust(14),
+                           self.order_book_id,
+                           self.side,
+                           self.quantity,
+                           self.price,
+                           self.time_in_force,
+                           self.open_close,
+                           self.client_account,
+                           self.customer_info,
+                           self.exchange_info,
+                           self.clearing_participant,
+                           self.crossing_key,
+                           self.capacity,
+                           self.directed_wholesale,
+                           self.execution_venue,
+                           self.intermediary_id,
+                           self.order_origin,
+                           self.filler,
+                           self.order_type,
+                           self.short_sell_quantity,
+                           self.minimum_acceptable_quantity]
+        for i in l:
+            print type(i), i
+
+
         return struct.pack(self._format,
                            self._ouch_type,
                            self.order_token.ljust(14),
@@ -232,7 +281,7 @@ class CancelByOrderId(OuchMessage):
 
 
 class Accepted(OuchMessage):
-    _format = '!c Q 14s L c Q Q L B B 10s B 15s 32s c L c c 4s 10s 20s 8s c Q'
+    _format = '!c Q 14s L c Q Q L B B 10s B 15s 32s c L c c 4s 10s 20s 8s c Q Q'
     _ouch_type = 'A'
 
     def __init__(self):
@@ -577,7 +626,7 @@ INTEGER_FIELDS = [
     "open_close",
     "order_book_id",
     "order_id",
-    "order_state"
+    "order_state",
     "price",
     "quantity",
     "reason",
@@ -585,8 +634,8 @@ INTEGER_FIELDS = [
     "short_sell_quantity",
     "time_in_force",
     "timestamp",
-    "traded_quantity",
     "trade_price",
+    "traded_quantity"
 ]
 
 

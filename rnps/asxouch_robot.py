@@ -276,8 +276,8 @@ class OuchRobot(BaseRobot):
             value = int(value)
 
         msg.get_payload().set_field(field_name, value)
-        logger.debug("set_ouch_field(%s, %s, %s)",
-                     message_name, field_name, value)
+        logger.debug("set_ouch_field(%s, %s, %s, %s)",
+                     message_name, field_name, value, str(type(value)))
         return
 
 
