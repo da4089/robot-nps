@@ -45,7 +45,7 @@ def has_complete_message(buf):
         # SoupBin header length field is count of following bytes (so + 2).
         return False
 
-    if buf[2] not in Messages.keys():
+    if soup_type not in Messages.keys():
         # Unrecognised SoupBin message type code.
         return False
 
@@ -60,7 +60,7 @@ def get_message(buf):
     if len(buf) < soup_length + 2:
         return None, buf
 
-    constructor = Messages.get(buf[2])
+    constructor = Messages.get(soup_type)
     if not constructor:
         return None, buf
 
