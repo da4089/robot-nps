@@ -11,15 +11,15 @@ script:
  - cd ..
  - env PYTHONPATH=. python ./rnps-ouch -f nasdaq_port &
  - while test ! -f nasdaq_port; do sleep 1; done
- - cd robot_tests/ouch
- - pybot -v OUCH_PORT:`cat ../nasdaq_port` *.robot
- - cd ..
+ - cd robot_tests/nasdaq-ouch4
+ - pybot -v OUCH_PORT:`cat ../../nasdaq_port` *.robot
+ - cd ../..
  - rm -f nasdaq_port
  - env PYTHONPATH=. python ./rnps-asxouch -f asx_port &
  - while test ! -f asx_port; do sleep 1; done
- - cd robot_tests
- - pybot -v OUCH_PORT:`cat ../asx_port` 005*.robot
- - cd ..
+ - cd robot_tests/asx-ouch
+ - pybot -v OUCH_PORT:`cat ../../asx_port` *.robot
+ - cd ../..
  - rm -f asx_port
  - env PYTHONPATH=. python ./rnps-fix -f fix_port &
  - while test ! -f fix_port; do sleep 1; done
