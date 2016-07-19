@@ -86,7 +86,88 @@ Create UTC Date Only Message Field
     Run Keyword and Expect Error    BadUTCDateOnlyError*    FIX.Set UTC Date Only Field    message_1    44    20160132
 
 
+Create TZ Timestamp Field
+    [Setup]    FIX.Reset
+    FIX.Create Message    message_1
+    FIX.Destroy Message    message_1
 
+Create TZ Time Only Field
+    [Setup]    FIX.Reset
+    FIX.Create Message    message_1
+    FIX.Set TZ Time Only Field    message_1    42    12:34
+    FIX.Set TZ Time Only Field    message_1    42    12:34Z
+    FIX.Set TZ Time Only Field    message_1    42    12:34+01
+    FIX.Set TZ Time Only Field    message_1    42    12:34+12
+    FIX.Set TZ Time Only Field    message_1    42    12:34-01
+    FIX.Set TZ Time Only Field    message_1    42    12:34-12
+    FIX.Set TZ Time Only Field    message_1    42    12:34+12:34
+    FIX.Set TZ Time Only Field    message_1    42    12:34-12:34
+    FIX.Set TZ Time Only Field    message_1    42    12:34:56
+    FIX.Set TZ Time Only Field    message_1    42    12:34:56Z
+    FIX.Set TZ Time Only Field    message_1    42    12:34:56+01
+    FIX.Set TZ Time Only Field    message_1    42    12:34:56+12
+    FIX.Set TZ Time Only Field    message_1    42    12:34:56-01
+    FIX.Set TZ Time Only Field    message_1    42    12:34:56-12
+    FIX.Set TZ Time Only Field    message_1    42    12:34:56+12:34
+    FIX.Set TZ Time Only Field    message_1    42    12:34:56-12:34
+    Run Keyword and Expect Error    BadTZTimeOnlyError*    FIX.Set TZ Time Only Field    message_1    44    12
+    Run Keyword and Expect Error    BadTZTimeOnlyError*    FIX.Set TZ Time Only Field    message_1    44    12:3
+    Run Keyword and Expect Error    BadTZTimeOnlyError*    FIX.Set TZ Time Only Field    message_1    44    12.34
+    Run Keyword and Expect Error    BadTZTimeOnlyError*    FIX.Set TZ Time Only Field    message_1    44    12:34:
+    Run Keyword and Expect Error    BadTZTimeOnlyError*    FIX.Set TZ Time Only Field    message_1    44    12:34:5
+    Run Keyword and Expect Error    BadTZTimeOnlyError*    FIX.Set TZ Time Only Field    message_1    44    12.34.56
+    Run Keyword and Expect Error    BadTZTimeOnlyError*    FIX.Set TZ Time Only Field    message_1    44    12:34z
+    Run Keyword and Expect Error    BadTZTimeOnlyError*    FIX.Set TZ Time Only Field    message_1    44    12:34+1
+    Run Keyword and Expect Error    BadTZTimeOnlyError*    FIX.Set TZ Time Only Field    message_1    44    12:34-1
+    Run Keyword and Expect Error    BadTZTimeOnlyError*    FIX.Set TZ Time Only Field    message_1    44    12:34+123
+    Run Keyword and Expect Error    BadTZTimeOnlyError*    FIX.Set TZ Time Only Field    message_1    44    12:34-123
+    Run Keyword and Expect Error    BadTZTimeOnlyError*    FIX.Set TZ Time Only Field    message_1    44    12:34+1234
+    Run Keyword and Expect Error    BadTZTimeOnlyError*    FIX.Set TZ Time Only Field    message_1    44    12:34-1234
+    Run Keyword and Expect Error    BadTZTimeOnlyError*    FIX.Set TZ Time Only Field    message_1    44    12:34+12345
+    Run Keyword and Expect Error    BadTZTimeOnlyError*    FIX.Set TZ Time Only Field    message_1    44    12:34-123456
+    Run Keyword and Expect Error    BadTZTimeOnlyError*    FIX.Set TZ Time Only Field    message_1    44    12:34+1301
+    Run Keyword and Expect Error    BadTZTimeOnlyError*    FIX.Set TZ Time Only Field    message_1    44    12:34-1301
+    Run Keyword and Expect Error    BadTZTimeOnlyError*    FIX.Set TZ Time Only Field    message_1    44    12:34+1260
+    Run Keyword and Expect Error    BadTZTimeOnlyError*    FIX.Set TZ Time Only Field    message_1    44    12:34-1260
+    Run Keyword and Expect Error    BadTZTimeOnlyError*    FIX.Set TZ Time Only Field    message_1    44    12:34+12:
+    Run Keyword and Expect Error    BadTZTimeOnlyError*    FIX.Set TZ Time Only Field    message_1    44    12:34-12:
+    Run Keyword and Expect Error    BadTZTimeOnlyError*    FIX.Set TZ Time Only Field    message_1    44    12:34+12:3
+    Run Keyword and Expect Error    BadTZTimeOnlyError*    FIX.Set TZ Time Only Field    message_1    44    12:34-12:3
+    Run Keyword and Expect Error    BadTZTimeOnlyError*    FIX.Set TZ Time Only Field    message_1    44    12:34+12.3
+    Run Keyword and Expect Error    BadTZTimeOnlyError*    FIX.Set TZ Time Only Field    message_1    44    12:34-12.3
+    Run Keyword and Expect Error    BadTZTimeOnlyError*    FIX.Set TZ Time Only Field    message_1    44    12:34/12
+    Run Keyword and Expect Error    BadTZTimeOnlyError*    FIX.Set TZ Time Only Field    message_1    44    12:34/1234
+    Run Keyword and Expect Error    BadTZTimeOnlyError*    FIX.Set TZ Time Only Field    message_1    44    12:34/12:34
+    Run Keyword and Expect Error    BadTZTimeOnlyError*    FIX.Set TZ Time Only Field    message_1    44    12:34+12.34
+    Run Keyword and Expect Error    BadTZTimeOnlyError*    FIX.Set TZ Time Only Field    message_1    44    12:34-12.34
+    Run Keyword and Expect Error    BadTZTimeOnlyError*    FIX.Set TZ Time Only Field    message_1    44    12:34+12:34:56
+    Run Keyword and Expect Error    BadTZTimeOnlyError*    FIX.Set TZ Time Only Field    message_1    44    12:34-12:34:56
+    Run Keyword and Expect Error    BadTZTimeOnlyError*    FIX.Set TZ Time Only Field    message_1    44    12:34:56+1
+    Run Keyword and Expect Error    BadTZTimeOnlyError*    FIX.Set TZ Time Only Field    message_1    44    12:34:56-1
+    Run Keyword and Expect Error    BadTZTimeOnlyError*    FIX.Set TZ Time Only Field    message_1    44    12:34:56+123
+    Run Keyword and Expect Error    BadTZTimeOnlyError*    FIX.Set TZ Time Only Field    message_1    44    12:34:56-123
+    Run Keyword and Expect Error    BadTZTimeOnlyError*    FIX.Set TZ Time Only Field    message_1    44    12:34:56+1234
+    Run Keyword and Expect Error    BadTZTimeOnlyError*    FIX.Set TZ Time Only Field    message_1    44    12:34:56-1234
+    Run Keyword and Expect Error    BadTZTimeOnlyError*    FIX.Set TZ Time Only Field    message_1    44    12:34:56+12345
+    Run Keyword and Expect Error    BadTZTimeOnlyError*    FIX.Set TZ Time Only Field    message_1    44    12:34:56-123456
+    Run Keyword and Expect Error    BadTZTimeOnlyError*    FIX.Set TZ Time Only Field    message_1    44    12:34:56+1301
+    Run Keyword and Expect Error    BadTZTimeOnlyError*    FIX.Set TZ Time Only Field    message_1    44    12:34:56-1301
+    Run Keyword and Expect Error    BadTZTimeOnlyError*    FIX.Set TZ Time Only Field    message_1    44    12:34:56+1260
+    Run Keyword and Expect Error    BadTZTimeOnlyError*    FIX.Set TZ Time Only Field    message_1    44    12:34:56-1260
+    Run Keyword and Expect Error    BadTZTimeOnlyError*    FIX.Set TZ Time Only Field    message_1    44    12:34:56+12:
+    Run Keyword and Expect Error    BadTZTimeOnlyError*    FIX.Set TZ Time Only Field    message_1    44    12:34:56-12:
+    Run Keyword and Expect Error    BadTZTimeOnlyError*    FIX.Set TZ Time Only Field    message_1    44    12:34:56+12:3
+    Run Keyword and Expect Error    BadTZTimeOnlyError*    FIX.Set TZ Time Only Field    message_1    44    12:34:56-12:3
+    Run Keyword and Expect Error    BadTZTimeOnlyError*    FIX.Set TZ Time Only Field    message_1    44    12:34:56+12.3
+    Run Keyword and Expect Error    BadTZTimeOnlyError*    FIX.Set TZ Time Only Field    message_1    44    12:34:56-12.3
+    Run Keyword and Expect Error    BadTZTimeOnlyError*    FIX.Set TZ Time Only Field    message_1    44    12:34:56/12
+    Run Keyword and Expect Error    BadTZTimeOnlyError*    FIX.Set TZ Time Only Field    message_1    44    12:34:56/1234
+    Run Keyword and Expect Error    BadTZTimeOnlyError*    FIX.Set TZ Time Only Field    message_1    44    12:34:56/12:34
+    Run Keyword and Expect Error    BadTZTimeOnlyError*    FIX.Set TZ Time Only Field    message_1    44    12:34:56+12.34
+    Run Keyword and Expect Error    BadTZTimeOnlyError*    FIX.Set TZ Time Only Field    message_1    44    12:34:56-12.34
+    Run Keyword and Expect Error    BadTZTimeOnlyError*    FIX.Set TZ Time Only Field    message_1    44    12:34:56+12:34:56
+    Run Keyword and Expect Error    BadTZTimeOnlyError*    FIX.Set TZ Time Only Field    message_1    44    12:34:56-12:34:56
+    FIX.Destroy Message    message_1
 
 Create Local Market Date Field
     [Setup]    FIX.Reset

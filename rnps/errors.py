@@ -1,7 +1,7 @@
 ########################################################################
 # robot-nps, Network Protocol Simulator for Robot Framework
 #
-# Copyright (C) 2014 David Arnold
+# Copyright (C) 2014-2016 David Arnold
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -53,6 +53,11 @@ class BadLocalMarketDateError(exceptions.ValueError):
 
 class BadMessageTypeError(exceptions.ValueError):
     """The supplied message type is not recognised."""
+    pass
+
+
+class BadTZTimeOnlyError(exceptions.ValueError):
+    """Cannot convert supplied value to TZ Time Only."""
     pass
 
 

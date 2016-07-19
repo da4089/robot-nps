@@ -345,8 +345,89 @@ class FixRobot(BaseRobot):
         if not msg:
             raise errors.NoSuchMessageError(message_name)
 
-        # FIXME: probably need a lot better support here?
-        msg.append_pair(tag, str(value))
+        # Validate format (HH:MM[:SS][Z|+/-hh[:mm]])
+        value = value.strip()
+        tz = None
+        if len(value) < 5:
+            raise errors.BadTZTimeOnlyError(message_name, tag, value)
+
+        h = int(value[0:2])
+        m = int(value[3:5])
+        if h > 23:
+            raise errors.BadTZTimeOnlyError(message_name, tag, value,
+                                            "Hours value out of range")
+        if m > 59:
+            raise errors.BadTZTimeOnlyError(message_name, tag, value,
+                                            "Minutes value out of range")
+        if value[2] != ":":
+            raise errors.BadTZTimeOnlyError(message_name, tag, value,
+                                            "Bad separator: %c" % value[2])
+        if len(value) > 5:
+            if len(value) == 6 and value[5] == 'Z':
+                tz = value[5:]
+            elif value[5] == "+" or value[5] == "-":
+                tz = value[5:]
+            elif value[5] == ":":
+                if len(value) < 8:
+                    raise errors.BadTZTimeOnlyError(message_name, tag, value)
+
+                s = int(value[6:8])
+                if s > 60:
+                    raise errors.BadTZTimeOnlyError(message_name, tag, value,
+                                                    "Seconds value out of "
+                                                    "range")
+                if len(value) > 8:
+                    tz = value[8:]
+            else:
+                raise errors.BadTZTimeOnlyError(message_name, tag, value,
+                                                "Bad timezone")
+
+        if tz:
+            if len(tz) == 1 and tz[0] == 'Z':
+                pass
+
+            elif tz[0] == "+" or tz[0] == "-":
+                if len(tz) == 3:
+                    if tz[1] == "0":
+                        ho = int(tz[2])
+                    else:
+                        ho = int(tz[1:3])
+                    if ho > 12:
+                        raise errors.BadTZTimeOnlyError(message_name, tag,
+                                                        value,
+                                                        "Offset hours out "
+                                                        "of range")
+                elif len(tz) == 6:
+                    if tz[1] == "0":
+                        ho = int(tz[2])
+                    else:
+                        ho = int(tz[1:3])
+                    if ho > 12:
+                        raise errors.BadTZTimeOnlyError(message_name, tag,
+                                                        value,
+                                                        "Offset hours out "
+                                                        "of range")
+                    if tz[4] == "0":
+                        mo = int(tz[5])
+                    else:
+                        mo = int(tz[4:6])
+                    if mo > 59:
+                        raise errors.BadTZTimeOnlyError(message_name, tag,
+                                                        value,
+                                                        "Offset minutes out "
+                                                        "of range")
+                    if tz[3] != ":":
+                        raise errors.BadTZTimeOnlyError(message_name, tag,
+                                                        value,
+                                                        "Bad offset separator")
+                else:
+                    raise errors.BadTZTimeOnlyError(message_name, tag, value,
+                                                    "Bad offset value")
+            else:
+                raise errors.BadTZTimeOnlyError(message_name, tag, value,
+                                                "Bad offset separator")
+
+        msg.append_pair(tag, value)
         return
 
     def set_local_market_date_field(self, message_name, tag, value):
