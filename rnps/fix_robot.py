@@ -281,8 +281,33 @@ class FixRobot(BaseRobot):
         if not msg:
             raise errors.NoSuchMessageError(message_name)
 
-        # FIXME: probably need a lot better support here?
-        msg.append_pair(tag, str(value))
+        # Validate format.
+        value = value.strip()
+        if len(value) < 8:
+            raise errors.BadUTCTimeOnlyError(message_name, tag, value)
+
+        h = int(value[0:2])
+        m = int(value[3:5])
+        s = int(value[6:8])
+        if h > 23:
+            raise errors.BadUTCTimeOnlyError(message_name, tag, "hh > 23")
+        if m > 59:
+            raise errors.BadUTCTimeOnlyError(message_name, tag, "mm > 59")
+        if s > 60:
+            raise errors.BadUTCTimeOnlyError(message_name, tag, "ss > 60")
+        if value[2] != ":" or value[5] != ":":
+            raise errors.BadUTCTimeOnlyError(message_name, tag, value)
+
+        if len(value) == 8:
+            pass
+        elif len(value) == 12:
+            if value[8] != ".":
+                raise errors.BadUTCTimeOnlyError(message_name, tag, value)
+            ms = int(value[9:12])
+        else:
+            raise errors.BadUTCTimeOnlyError(message_name, tag, value)
+
+        msg.append_pair(tag, value)
         return
 
     def set_utc_date_only_field(self, message_name, tag, value):
@@ -290,8 +315,20 @@ class FixRobot(BaseRobot):
         if not msg:
             raise errors.NoSuchMessageError(message_name)
 
-        # FIXME: probably need a lot better support here?
-        msg.append_pair(tag, str(value))
+        # Validate format.
+        value = value.strip()
+        if len(value) != 8:
+            raise errors.BadUTCTimeDateOnlyError(message_name, tag, value)
+
+        Y = int(value[0:4])
+        M = int(value[4:6])
+        D = int(value[6:8])
+        if M > 12:
+            raise errors.BadUTCDateOnlyError(message_name, tag, "MM > 12")
+        if D > 31:
+            raise errors.BadUTCDateOnlyError(message_name, tag, "DD > 31")
+
+        msg.append_pair(tag, value)
         return
 
     def set_tz_timestamp_field(self, message_name, tag, value):
@@ -317,11 +354,23 @@ class FixRobot(BaseRobot):
         if not msg:
             raise errors.NoSuchMessageError(message_name)
 
-        # FIXME: probably need a lot better support here?
-        msg.append_pair(tag, str(value))
+        # Validate format.
+        value = value.strip()
+        if len(value) != 8:
+            raise errors.BadLocalMarketDateError(message_name, tag, value)
+
+        Y = int(value[0:4])
+        M = int(value[4:6])
+        D = int(value[6:8])
+        if M > 12:
+            raise errors.BadLocalMarketDateError(message_name, tag, "MM > 12")
+        if D > 31:
+            raise errors.BadLocalMarketDateError(message_name, tag, "DD > 31")
+
+        msg.append_pair(tag, value)
         return
 
-    def get_field(self, message_name, tag):
+    def get_field(self, message_name, tag, nth=1):
         """Get field value from this message."""
 
         # FIXME: needs some work to support repeating groups?
@@ -329,7 +378,7 @@ class FixRobot(BaseRobot):
         if not msg:
             raise errors.NoSuchMessageError(message_name)
 
-        value = msg.get(tag)
+        value = msg.get(tag, nth)
         if not value:
             raise errors.BadFieldNameError(tag)
 

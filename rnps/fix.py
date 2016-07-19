@@ -259,6 +259,7 @@ class FixMessage(object):
         the 'nth' parameter is overridden, can get repeated fields."""
 
         str_tag = str(tag)
+        nth = int(nth)
 
         for t, v in self.pairs:
             if t == str_tag:

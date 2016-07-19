@@ -26,12 +26,28 @@ class BadBooleanError(exceptions.ValueError):
     pass
 
 
+class BadUTCDateOnlyError(exceptions.ValueError):
+    """Cannot convert supplied value to UTC Date Only."""
+    pass
+
+
 class BadUTCTimestampError(exceptions.ValueError):
     """Cannot convert supplied value to UTC Timestamp."""
     pass
 
+
+class BadUTCTimeOnlyError(exceptions.ValueError):
+    """Cannot convert supplied value to UTC Time Only."""
+    pass
+
+
 class BadFieldNameError(exceptions.NameError):
     """No field of this name in the specified message."""
+    pass
+
+
+class BadLocalMarketDateError(exceptions.ValueError):
+    """Cannot convert supplied value to local market date."""
     pass
 
 

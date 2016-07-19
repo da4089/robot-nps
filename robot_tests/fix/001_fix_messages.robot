@@ -44,7 +44,7 @@ Create String Message Field
     FIX.Create Message     message_1
     FIX.Set String Field    message_1    42    string value with spaces
 
-Create UTC Timestamp Message FIeld
+Create UTC Timestamp Message Field
     [Setup]    FIX.Reset
     FIX.Create Message    message_1
     FIX.Set UTC Timestamp Field    message_1    42    20160101-12:34:56.789
@@ -60,8 +60,66 @@ Create UTC Timestamp Message FIeld
     Run Keyword and Expect Error    BadUTCTimestampError*    FIX.Set UTC Timestamp Field    message_1    44    20160101-12:34:56,789
     Run Keyword and Expect Error    BadUTCTimestampError*    FIX.Set UTC Timestamp Field    message_1    44    20160101-12:34:56.78
     Run Keyword and Expect Error    BadUTCTimestampError*    FIX.Set UTC Timestamp Field    message_1    44    20160101-12:34:56.7890
+    FIX.Destroy Message    message_1
+
+Create UTC Time Only Message Field
+    [Setup]    FIX.Reset
+    FIX.Create Message    message_1
+    FIX.Set UTC Time Only Field    message_1    42    12:34:56.789
+    FIX.Set UTC Time Only Field    message_1    42    12:34:56
+    Run Keyword and Expect Error    BadUTCTimeOnlyError*    FIX.Set UTC Time Only Field    message_1    44    12:34:56.
+    Run Keyword and Expect Error    BadUTCTimeOnlyError*    FIX.Set UTC Time Only Field    message_1    44    12:34
+    Run Keyword and Expect Error    BadUTCTimeOnlyError*    FIX.Set UTC Time Only Field    message_1    44    12:34:56.7
+    Run Keyword and Expect Error    BadUTCTimeOnlyError*    FIX.Set UTC Time Only Field    message_1    44    12:34:56.7890
+    Run Keyword and Expect Error    BadUTCTimeOnlyError*    FIX.Set UTC Time Only Field    message_1    44    24:34:56
+    Run Keyword and Expect Error    BadUTCTimeOnlyError*    FIX.Set UTC Time Only Field    message_1    44    12:60:56
+    Run Keyword and Expect Error    BadUTCTimeOnlyError*    FIX.Set UTC Time Only Field    message_1    44    12:34:61
+    Run Keyword and Expect Error    BadUTCTimeOnlyError*    FIX.Set UTC Time Only Field    message_1    44    12.34.56
+    Run Keyword and Expect Error    BadUTCTimeOnlyError*    FIX.Set UTC Time Only Field    message_1    44    12:34:56,789
+
+Create UTC Date Only Message Field
+    [Setup]    FIX.Reset
+    FIX.Create Message    message_1
+    FIX.Set UTC Date Only Field    message_1    42    20160101
+
+    Run Keyword and Expect Error    BadUTCDateOnlyError*    FIX.Set UTC Date Only Field    message_1    44    20161301
+    Run Keyword and Expect Error    BadUTCDateOnlyError*    FIX.Set UTC Date Only Field    message_1    44    20160132
 
 
 
+
+Create Local Market Date Field
+    [Setup]    FIX.Reset
+    FIX.Create Message    message_1
+    FIX.Set Local Market Date Field    message_1    42    20160101
+
+    Run Keyword and Expect Error    BadLocalMarketDateError*    FIX.Set Local Market Date Field    message_1    44    20161301
+    Run Keyword and Expect Error    BadLocalMarketDateError*    FIX.Set Local Market Date Field    message_1    44    20160132
+
+
+Create Nested Repeating Fields
+    [Setup]    FIX.Reset
+    FIX.Create Message    message_1
+    FIX.Set Integer Field    message_1    73    2
+    FIX.Set String Field    message_1    11    ORD#1
+    FIX.Set Integer Field    message_1    67    1
+    FIX.Set Integer Field    message_1    78    2
+    FIX.Set String Field    message_1    79    ACCT#1
+    FIX.Set Float Field    message_1    80    100
+    FIX.Set String Field    message_1    79    ACCT#2
+    FIX.Set Float Field    message_1    80    200
+    FIX.Set String Field    message_1    11    ORD#2
+    FIX.Set Integer Field    message_1    67    2
+    FIX.Set Integer Field    message_1    78    2
+    FIX.Set String Field    message_1    79    ACCT#3
+    FIX.Set Float Field    message_1    80    1000
+    FIX.Set String Field    message_1    79    ACCT#4
+    FIX.Set Float Field    message_1    80    2000
+
+    ${noAllocs}=    FIX.Get Field    message_1    73
+    Should Be Equal    2    ${noAllocs}
+
+    ${acct}=    FIX.GetField    message_1    79    4
+    Should Be Equal    ACCT#4    ${acct}
 
 *** Keywords ***
