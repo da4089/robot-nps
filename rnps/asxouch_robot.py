@@ -20,7 +20,7 @@
 
 from base import *
 import soupbin
-import ouch4
+import asxouch
 
 # Module-local logger.
 logger = logging.getLogger(__name__)
@@ -28,10 +28,10 @@ logger = logging.getLogger(__name__)
 
 ########################################################################
 
-class OuchServerSession(BaseServerSession):
+class AsxOuchServerSession(BaseServerSession):
     def __init__(self, factory, address):
         BaseServerSession.__init__(self, factory, address)
-        self.set_protocol("OUCH")
+        self.set_protocol("ASXOUCH")
         return
 
     def dataReceived(self, data):
@@ -58,7 +58,7 @@ class OuchServerSession(BaseServerSession):
                              "length %u, ouch_type [%s]",
                              soup_type, len(msg.message), msg.message[0:1])
 
-                msg.set_payload(ouch4.get_message(soup_type, msg.message))
+                msg._payload = asxouch.get_message(soup_type, msg.message)
 
             self.received_messages.append(msg)
             logger.info("%s: server queuing %s", self.factory.name, soup_type)
@@ -66,16 +66,16 @@ class OuchServerSession(BaseServerSession):
         return
 
 
-class OuchServerFactory(BaseServerFactory):
+class AsxOuchServerFactory(BaseServerFactory):
     def __init__(self, robot, name, port, version):
         BaseServerFactory.__init__(self, robot, name, port, version)
-        self.set_protocol("OUCH", OuchServerSession)
+        self.set_protocol("ASXOUCH", AsxOuchServerSession)
         return
 
 
-class OuchClient(BaseClient):
+class AsxOuchClient(BaseClient):
     def __init__(self, factory, address):
-        self.set_protocol("OUCH")
+        self.set_protocol("ASXOUCH")
         BaseClient.__init__(self, factory, address)
         return
 
@@ -105,7 +105,7 @@ class OuchClient(BaseClient):
                              "length %u, ouch_type [%s]",
                              soup_type, len(msg.message), msg.message[0:1])
 
-                msg.set_payload(ouch4.get_message(soup_type, msg.message))
+                msg._payload = asxouch.get_message(soup_type, msg.message)
 
             self.received_messages.append(msg)
             logger.info("%s: client queuing %s", self.factory.name, soup_type)
@@ -113,57 +113,63 @@ class OuchClient(BaseClient):
         return
 
 
-class OuchClientFactory(BaseClientFactory):
+class AsxOuchClientFactory(BaseClientFactory):
     def __init__(self, robot, name,
                  server_host, server_port,
                  protocol_version, client_port):
         BaseClientFactory.__init__(self, robot, name,
                                    server_host, server_port,
                                    protocol_version, client_port)
-        self.set_protocol("OUCH", OuchClient)
+        self.set_protocol("ASXOUCH", AsxOuchClient)
         return
 
 
 class OuchRobot(BaseRobot):
     def __init__(self):
         self.protocol_name = "OUCH"
+        self.client_factory = AsxOuchClientFactory
+        self.server_factory = AsxOuchServerFactory
+        self.framing_protocol = soupbin
+        self.message_protocol = asxouch
+
         BaseRobot.__init__(self)
         return
 
     def create_client(self, client_name,
                       server_host, server_port,
                       protocol_version, client_port="0"):
-        """Create an OUCH client session."""
+        """Create a client session."""
 
         if client_name in self.clients:
             raise errors.DuplicateClientError(client_name)
 
-        client = OuchClientFactory(self, client_name,
-                                   server_host, server_port,
-                                   protocol_version, client_port)
+        client = self.client_factory(self, client_name,
+                                     server_host, server_port,
+                                     protocol_version, client_port)
         self.clients[client_name] = client
-        logger.info("Created OUCH client: %s %s -> %s:%s v%s",
-                    client_name, client_port, server_host,
-                    server_port, protocol_version)
+        logger.info("Created %s client: %s %s -> %s:%s v%s",
+                    self.protocol_name,
+                    client_name, client_port, server_host, server_port,
+                    protocol_version)
         return
 
     def create_server(self, server_name, port, version):
-        """Create an OUCH server."""
+        """Create a server."""
 
         if server_name in self.servers:
             raise errors.DuplicateServerError(server_name)
 
-        server = OuchServerFactory(self, server_name, port, version)
+        server = self.server_factory(self, server_name, port, version)
         self.servers[server_name] = server
-        logger.info("Created OUCH server: %s @ port %s v%s",
-                    server_name, port, version)
+        logger.info("Created %s server: %s @ port %s v%s",
+                    self.protocol_name, server_name, port, version)
         return
 
     def create_soup_message(self, name, soup_type):
         if name in self.messages:
             raise errors.DuplicateMessageError(name)
 
-        constructor = soupbin.Messages.get(soup_type)
+        constructor = self.framing_protocol.Messages.get(soup_type)
         if not constructor:
             raise errors.BadMessageTypeError(soup_type)
 
@@ -220,16 +226,16 @@ class OuchRobot(BaseRobot):
             raise errors.NoSuchMessageError(message_name)
 
         if msg.get_type() == 'U':
-            constructor = ouch4.UNSEQUENCED_MESSAGES.get(ouch_type)
+            constructor = self.message_protocol.UNSEQUENCED_MESSAGES.get(ouch_type)
         elif msg.get_type() == 'S':
-            constructor = ouch4.SEQUENCED_MESSAGES.get(ouch_type)
+            constructor = self.message_protocol.SEQUENCED_MESSAGES.get(ouch_type)
         else:
             raise errors.BadMessageTypeError("SOUP message must be U or S, "
                                              "not %c" % msg.get_type())
         if not constructor:
             raise errors.BadMessageTypeError(ouch_type)
 
-        msg.set_payload(constructor())
+        msg._payload = constructor()
         return
 
     def get_ouch_type(self, message_name):
@@ -266,13 +272,26 @@ class OuchRobot(BaseRobot):
         if not msg.has_payload():
             raise errors.NotAnOuchMessageError(message_name)
 
-        if field_name in ouch4.INTEGER_FIELDS:
+        if field_name in self.message_protocol.INTEGER_FIELDS:
             value = int(value)
 
         msg.get_payload().set_field(field_name, value)
-        logger.debug("set_ouch_field(%s, %s, %s)",
-                     message_name, field_name, value)
+        logger.debug("set_ouch_field(%s, %s, %s, %s)",
+                     message_name, field_name, value, str(type(value)))
         return
+
+
+class AsxOuchRobot(OuchRobot):
+    def __init__(self):
+        self.protocol_name = "ASX OUCH"
+        self.client_factory = AsxOuchClientFactory
+        self.server_factory = AsxOuchServerFactory
+        self.framing_protocol = soupbin
+        self.message_protocol = asxouch
+
+        OuchRobot.__init__(self)
+        return
+
 
 
 ########################################################################

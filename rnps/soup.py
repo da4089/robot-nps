@@ -1,7 +1,7 @@
 ########################################################################
 # robot-nps, Network Protocol Simulator for Robot Framework
 #
-# Copyright (C) 2014 David Arnold
+# Copyright (C) 2014-2016 David Arnold
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -37,7 +37,11 @@ import struct
 
 LF = '\n'
 
-class ClientHeartbeat(object):
+class SoupMessage(object):
+    _type = None
+
+
+class ClientHeartbeat(SoupMessage):
     _type = 'R'
 
     def __init__(self):
@@ -52,7 +56,7 @@ class ClientHeartbeat(object):
         return
 
 
-class Debug(object):
+class Debug(SoupMessage):
     _type = '+'
 
     def __init__(self):
@@ -76,7 +80,7 @@ class Debug(object):
         return
 
 
-class EndOfSession(object):
+class EndOfSession(SoupMessage):
     _type = 'Z'
 
     def __init__(self):
@@ -91,7 +95,7 @@ class EndOfSession(object):
         return
 
 
-class LoginAccepted(object):
+class LoginAccepted(SoupMessage):
     _format = 'c10s20sc'
     _type = 'A'
 
@@ -112,7 +116,7 @@ class LoginAccepted(object):
         return
 
 
-class LoginRejected(object):
+class LoginRejected(SoupMessage):
     _format = 'ccc'
     _type = 'J'
 
@@ -137,7 +141,7 @@ class LoginRejected(object):
         return
 
 
-class LoginRequest(object):
+class LoginRequest(SoupMessage):
     _format = 'c6s10s10s20sc'
     _type = 'L'
 
@@ -168,7 +172,7 @@ class LoginRequest(object):
         return
 
 
-class LogoutRequest(object):
+class LogoutRequest(SoupMessage):
     _format = 'cc'
     _type = 'O'
 
@@ -185,7 +189,7 @@ class LogoutRequest(object):
         return
 
 
-class SequencedData(object):
+class SequencedData(SoupMessage):
     _type = 'S'
 
     def __init__(self):
@@ -209,7 +213,7 @@ class SequencedData(object):
         return
 
 
-class ServerHeartbeat(object):
+class ServerHeartbeat(SoupMessage):
     _format = 'cc'
     _type = 'H'
 
@@ -228,7 +232,7 @@ class ServerHeartbeat(object):
         return
 
 
-class UnsequencedData(object):
+class UnsequencedData(SoupMessage):
     _type = 'U'
 
     def __init__(self):
