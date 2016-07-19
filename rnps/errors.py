@@ -26,6 +26,10 @@ class BadBooleanError(exceptions.ValueError):
     pass
 
 
+class BadUTCTimestampError(exceptions.ValueError):
+    """Cannot convert supplied value to UTC Timestamp."""
+    pass
+
 class BadFieldNameError(exceptions.NameError):
     """No field of this name in the specified message."""
     pass

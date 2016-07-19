@@ -1,7 +1,7 @@
 ########################################################################
 # robot-nps, Network Protocol Simulator for Robot Framework
 #
-# Copyright (C) 2015 David Arnold
+# Copyright (C) 2015-2016 David Arnold
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -232,7 +232,51 @@ class FixRobot(BaseRobot):
         msg.append_pair(tag, value)
         return
 
-    def set_timestamp_field(self, message_name, tag, value):
+    def set_utc_timestamp_field(self, message_name, tag, value):
+        msg = self.messages.get(message_name)
+        if not msg:
+            raise errors.NoSuchMessageError(message_name)
+
+        # Validate format.
+        value = value.strip()
+        if len(value) < 17:
+            raise errors.BadUTCTimestampError(message_name, tag, value)
+
+        Y = int(value[0:4])
+        M = int(value[4:6])
+        D = int(value[6:8])
+        if M > 12:
+            raise errors.BadUTCTimestampError(message_name, tag, "MM > 12")
+        if D > 31:
+            raise errors.BadUTCTimestampError(message_name, tag, "DD > 31")
+        if value[8] != "-":
+            raise errors.BadUTCTimestampError(message_name, tag, value)
+
+        h = int(value[9:11])
+        m = int(value[12:14])
+        s = int(value[15:17])
+        if h > 23:
+            raise errors.BadUTCTimestampError(message_name, tag, "hh > 23")
+        if m > 59:
+            raise errors.BadUTCTimestampError(message_name, tag, "mm > 59")
+        if s > 60:
+            raise errors.BadUTCTimestampError(message_name, tag, "ss > 60")
+        if value[11] != ":" or value[14] != ":":
+            raise errors.BadUTCTimestampError(message_name, tag, value)
+
+        if len(value) == 17:
+            pass
+        elif len(value) == 21:
+            if value[17] != ".":
+                raise errors.BadUTCTimestampError(message_name, tag, value)
+            ms = int(value[18:21])
+        else:
+            raise errors.BadUTCTimestampError(message_name, tag, value)
+
+        msg.append_pair(tag, value)
+        return
+
+    def set_utc_time_only_field(self, message_name, tag, value):
         msg = self.messages.get(message_name)
         if not msg:
             raise errors.NoSuchMessageError(message_name)
@@ -241,7 +285,7 @@ class FixRobot(BaseRobot):
         msg.append_pair(tag, str(value))
         return
 
-    def set_time_field(self, message_name, tag, value):
+    def set_utc_date_only_field(self, message_name, tag, value):
         msg = self.messages.get(message_name)
         if not msg:
             raise errors.NoSuchMessageError(message_name)
@@ -250,7 +294,7 @@ class FixRobot(BaseRobot):
         msg.append_pair(tag, str(value))
         return
 
-    def set_date_field(self, message_name, tag, value):
+    def set_tz_timestamp_field(self, message_name, tag, value):
         msg = self.messages.get(message_name)
         if not msg:
             raise errors.NoSuchMessageError(message_name)
@@ -258,7 +302,25 @@ class FixRobot(BaseRobot):
         # FIXME: probably need a lot better support here?
         msg.append_pair(tag, str(value))
         return
-    
+
+    def set_tz_time_only_field(self, message_name, tag, value):
+        msg = self.messages.get(message_name)
+        if not msg:
+            raise errors.NoSuchMessageError(message_name)
+
+        # FIXME: probably need a lot better support here?
+        msg.append_pair(tag, str(value))
+        return
+
+    def set_local_market_date_field(self, message_name, tag, value):
+        msg = self.messages.get(message_name)
+        if not msg:
+            raise errors.NoSuchMessageError(message_name)
+
+        # FIXME: probably need a lot better support here?
+        msg.append_pair(tag, str(value))
+        return
+
     def get_field(self, message_name, tag):
         """Get field value from this message."""
 

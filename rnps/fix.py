@@ -1,7 +1,7 @@
 ########################################################################
 # robot-nps, Network Protocol Simulator for Robot Framework
 #
-# Copyright (C) 2015 David Arnold
+# Copyright (C) 2015-2016 David Arnold
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -84,7 +84,7 @@ class FixParser(object):
         m = FixMessage()
         m.append_strings(self.pairs[:index + 1])
         self.pairs = self.pairs[index:]
-        
+
         return m
 
 

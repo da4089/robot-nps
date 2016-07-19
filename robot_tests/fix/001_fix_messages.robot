@@ -44,6 +44,24 @@ Create String Message Field
     FIX.Create Message     message_1
     FIX.Set String Field    message_1    42    string value with spaces
 
+Create UTC Timestamp Message FIeld
+    [Setup]    FIX.Reset
+    FIX.Create Message    message_1
+    FIX.Set UTC Timestamp Field    message_1    42    20160101-12:34:56.789
+    FIX.Set UTC Timestamp Field    message_1    43    20160101-12:34:56
+    Run Keyword and Expect Error    BadUTCTimestampError*    FIX.Set UTC Timestamp Field    message_1    44    20160101
+    Run Keyword and Expect Error    BadUTCTimestampError*    FIX.Set UTC Timestamp Field    message_1    44    20161301-12:34:56
+    Run Keyword and Expect Error    BadUTCTimestampError*    FIX.Set UTC Timestamp Field    message_1    44    20160132-12:34:56
+    Run Keyword and Expect Error    BadUTCTimestampError*    FIX.Set UTC Timestamp Field    message_1    44    20160101Z12:34:56
+    Run Keyword and Expect Error    BadUTCTimestampError*    FIX.Set UTC Timestamp Field    message_1    44    20160101-24:34:56
+    Run Keyword and Expect Error    BadUTCTimestampError*    FIX.Set UTC Timestamp Field    message_1    44    20160101-12:60:56
+    Run Keyword and Expect Error    BadUTCTimestampError*    FIX.Set UTC Timestamp Field    message_1    44    20160101-12:34:61
+    Run Keyword and Expect Error    BadUTCTimestampError*    FIX.Set UTC Timestamp Field    message_1    44    20160101-12/34/56
+    Run Keyword and Expect Error    BadUTCTimestampError*    FIX.Set UTC Timestamp Field    message_1    44    20160101-12:34:56,789
+    Run Keyword and Expect Error    BadUTCTimestampError*    FIX.Set UTC Timestamp Field    message_1    44    20160101-12:34:56.78
+    Run Keyword and Expect Error    BadUTCTimestampError*    FIX.Set UTC Timestamp Field    message_1    44    20160101-12:34:56.7890
+
+
 
 
 *** Keywords ***
