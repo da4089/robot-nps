@@ -287,7 +287,7 @@ class BivaOuchRobot(OuchRobot):
         self.client_factory = BivaOuchClientFactory
         self.server_factory = BivaOuchServerFactory
         self.framing_protocol = soupbin
-        self.message_protocol = asxouch
+        self.message_protocol = bivaouch
 
         OuchRobot.__init__(self)
         return

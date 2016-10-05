@@ -286,7 +286,7 @@ class Replaced(OuchMessage):
         self.replacement_order_token = fields[2]
         self.order_verb = fields[3]
         self.quantity = fields[4]
-        self.orderbook = fields[5].
+        self.orderbook = fields[5]
         self.price = fields[6]
         self.order_reference_number = fields[7]
         self.order_state = fields[8]
