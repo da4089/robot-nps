@@ -2,7 +2,7 @@
 ########################################################################
 # robot-nps, Network Protocol Simulator for Robot Framework
 #
-# Copyright (C) 2014 David Arnold
+# Copyright (C) 2014-2016 David Arnold
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,13 +23,13 @@ from distutils.core import setup
 
 
 setup(name="robot-nps",
-      version="1.0.0",
+      version="1.2.0",
       description="Robot Framework Network Protocol Simulator",
       url="https://github.com/da4089/robot-nps",
       author="David Arnold",
       author_email="d+robot-nps@0x1.org",
       packages=["rnps"],
-      scripts=["rnps-ouch"])
+      scripts=["rnps-ouch", "rnps-asxouch", "rnps-bivaouch"])
 
 
 ########################################################################
