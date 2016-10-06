@@ -324,7 +324,7 @@ class Canceled(OuchMessage):
 
 
 class Executed(OuchMessage):
-    _format = '!c Q L L c Q L'
+    _format = '!c Q L Q L c Q L'
     _ouch_type = 'E'
 
     def __init__(self):
@@ -338,6 +338,11 @@ class Executed(OuchMessage):
         return
 
     def encode(self):
+        import types
+        for f in self.__dict__.keys():
+            if f[0] != "_" and type(self.__dict__[f]) != types.MethodType:
+                print f, type(self.__dict__[f]), self.__dict__[f]
+
         return struct.pack(self._format,
                            self._ouch_type,
                            self.timestamp,
@@ -476,12 +481,13 @@ INTEGER_FIELDS = [
     "counter_party_id",
     "executed_price",
     "executed_quantity",
+    "existing_order_token",
     "match_number",
     "minimum_quantity",
-    "order_token"
+    "order_token",
     "order_reference_number",
     "orderbook",
-    "previous_order_toke",
+    "previous_order_token",
     "price",
     "quantity",
     "reference_price",
