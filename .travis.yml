@@ -20,6 +20,12 @@ script:
  - pybot -v OUCH_PORT:`cat ../asx_port` 005*.robot
  - cd ..
  - rm -f asx_port
+ - env PYTHONPATH=. python ./rnps-bivaouch -f biva_port &
+ - while test ! -f biva_port; do sleep 1; done
+ - cd robot_tests
+ - pybot -v OUCH_PORT:`cat ../biva_port` 006*.robot
+ - cd ..
+ - rm -f biva_port
  - cd docs
  - make html
  - cd ..
